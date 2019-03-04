@@ -1,7 +1,7 @@
 /**
  * ReadTriangle reads in points from a triangle file
  * @author Nicholas Senatore
- * @since 2/25/2019
+ * @since 3/4/2019
  */
 
 import java.io.*;
@@ -325,6 +325,103 @@ public class RobinsonQuads {
       }
    } //End printQuads   
    
+   /**
+    * outputRCode - a method to output the file that contains the R code to draw a quad / triangle (MUST TYPE -r)
+    * @param fileNameR is the file name
+    */
+   public static void outputRCode(String fileNameR) throws FileNotFoundException {
+
+	  int triNum;
+	  String rtext = "";
+	  
+	  rtext += "centroid = function ( X, Y ) {" + System.lineSeparator()
+		   + "cx = (X[1] + X[2] + X[3] + X[4]) / 4" + System.lineSeparator()
+		   + "cy = (Y[1] + Y[2] + Y[3] + Y[4]) / 4" + System.lineSeparator()
+		   + "data.frame( cx, cy )" + System.lineSeparator()
+   		+ "}" + System.lineSeparator() + System.lineSeparator()
+   			
+	  		+ "show = function ( X, Y, TX=NULL, TY=NULL, title=\"\" ) {" + System.lineSeparator()
+	  		+ "TL = c( \"t1\", \"t2\", \"t3\" )  #labels for tri  pts" + System.lineSeparator()
+			+ "QL = c( \"p1\", \"p2\", \"p3\", \"p4\" )  #labels for quad pts" + System.lineSeparator()
+	  		+ "width = max( abs( X[1] - X[2] )," + System.lineSeparator()
+			+ "abs( X[1] - X[3] )," + System.lineSeparator()
+			+ "abs( X[1] - X[4] )," + System.lineSeparator()
+			+ "abs( X[2] - X[3] )," + System.lineSeparator()
+			+ "abs( X[2] - X[4] )," + System.lineSeparator()
+         + "abs( X[3] - X[4] )," + System.lineSeparator()
+         + "abs( Y[1] - Y[2] )," + System.lineSeparator()
+         + "abs( Y[1] - Y[3] )," + System.lineSeparator()
+         + "abs( Y[1] - Y[4] )," + System.lineSeparator()
+         + "abs( Y[2] - Y[3] )," + System.lineSeparator()
+         + "abs( Y[2] - Y[4] )," + System.lineSeparator()
+         + "abs( Y[3] - Y[4] ) )" + System.lineSeparator()
+         + "plot( TX, TY, asp=1, main=title, col=\"gray\", pch=2, xlab=\"x\", ylab=\"y\" )" + System.lineSeparator()
+         + "width = max( width, " + System.lineSeparator()
+         + "abs( TX[1] - TX[2] )," + System.lineSeparator()
+         + "abs( TX[1] - TX[3] )," + System.lineSeparator()
+         + "abs( TX[2] - TX[3] )," + System.lineSeparator()
+         + "abs( TY[1] - TY[2] )," + System.lineSeparator()
+         + "abs( TY[1] - TY[3] )," + System.lineSeparator()
+         + "abs( TY[2] - TY[3] ) )" + System.lineSeparator()
+         + "text( TX+0.03*width, TY+0.02*width, labels=TL, col=\"gray\" )" + System.lineSeparator()
+         + "segments( TX[1], TY[1], TX[2], TY[2], col=\"gray\", lty=2 )" + System.lineSeparator()
+         + "segments( TX[2], TY[2], TX[3], TY[3], col=\"gray\", lty=2 )" + System.lineSeparator()
+         + "segments( TX[3], TY[3], TX[1], TY[1], col=\"gray\", lty=2 )" + System.lineSeparator()
+         + "points( X, Y, pch=15 )" + System.lineSeparator()
+         + "text( X+0.03*width, Y+0.02*width, labels=QL )" + System.lineSeparator()
+         + "segments( X[1], Y[1], X[2], Y[2] )" + System.lineSeparator()
+         + "segments( X[2], Y[2], X[3], Y[3] )" + System.lineSeparator()
+         + "segments( X[3], Y[3], X[4], Y[4] )" + System.lineSeparator()
+         + "segments( X[4], Y[4], X[1], Y[1] )" + System.lineSeparator() + System.lineSeparator()
+            
+         + "#calc centroid" + System.lineSeparator()
+        	+ "c = centroid( X, Y )" + System.lineSeparator()
+        	+ "#calc limits" + System.lineSeparator()
+        	+ "minX = X[1]" + System.lineSeparator()
+        	+ "maxX = X[1]" + System.lineSeparator()
+        	+ "minY = Y[1]" + System.lineSeparator()
+        	+ "maxY = Y[1]" + System.lineSeparator()
+        	+ "for (i in c(2, 3, 4)) {" + System.lineSeparator()
+        	+ "	if (X[i] < minX)    minX = X[i]" + System.lineSeparator()
+        	+ "	if (X[i] > maxX)    maxX = X[i]" + System.lineSeparator()
+        	+ "	if (Y[i] < minY)    minY = Y[i]" + System.lineSeparator()
+        	+ "	if (Y[i] > maxY)    maxY = Y[i]" + System.lineSeparator()
+         + "}" + System.lineSeparator()
+   		+ "#draw coordinate system centered at centroid" + System.lineSeparator()
+   		+ "points( c, col=\"gray\" )" + System.lineSeparator()
+   		+ "segments( minX, c$cy, maxX, c$cy, col=\"gray\", lty=3 )" + System.lineSeparator()
+   		+ "segments( c$cx, minY, c$cx, maxY, col=\"gray\", lty=3 )" + System.lineSeparator()
+              	
+         + "}" + System.lineSeparator() + System.lineSeparator();
+
+	  for ( int i = 0; i < QuadsX.size(); i++ ) {
+		  rtext += "X = c(" + QuadsX.get(i)[0] + ", " + QuadsX.get(i)[1] + ", " + QuadsX.get(i)[2] + ", " + QuadsX.get(i)[3] + ")" + System.lineSeparator()
+			     + "Y = c(" + QuadsY.get(i)[0] + ", " + QuadsY.get(i)[1] + ", " + QuadsY.get(i)[2] + ", " + QuadsY.get(i)[3] + ")" + System.lineSeparator();
+		  
+		  if ((i + 1) % 3 == 0){
+			  triNum = (i+1) / 3;
+		  }
+		  else{
+			  triNum = ((i+1) / 3) + 1;
+		  }
+		  
+		  rtext += "TX = c(" + x.get(triNum)[0] + ", " + x.get(triNum)[1] + ", " + x.get(triNum)[2] + ")" + System.lineSeparator()
+		  		 + "TY = c(" + y.get(triNum)[0] + ", " + y.get(triNum)[1] + ", " + y.get(triNum)[2] + ")" + System.lineSeparator();
+		  
+		  String title = "Quad " + (i + 1) + ", Triangle " + triNum;
+		  rtext += "show( X, Y, TX, TY, title=\"" + title + "\")" + System.lineSeparator() + System.lineSeparator();
+	  }
+	  
+	  try (PrintWriter out = new PrintWriter(fileNameR + ".r")){
+		  out.println(rtext);
+	  }
+      catch (FileNotFoundException e) { //Checks for file not found exception
+          System.err.println("Problem creating files");
+          System.err.println(e.getMessage()); 
+          throw e;
+      }   
+   } //End outputRCode
+   
    // ----------------------------------------------------------------------------------------------
    // MAIN METHOD
    // ----------------------------------------------------------------------------------------------      
@@ -338,15 +435,25 @@ public class RobinsonQuads {
       //Command Methods
       
       boolean printQuadsNeeded = false;
-	  boolean printTrianglesNeeded = false;
+	   boolean printTrianglesNeeded = false;
+      boolean outputRCodeNeeded = false;
+      String fileNameR = null;
         
       for ( int i = 0; i < args.length; i++ ) {
          
-		 if ( args[i].equals("-printt") ) {
-		    printTrianglesNeeded = true; 
-		 }
+		   if ( args[i].equals("-printt") ) {
+		      printTrianglesNeeded = true; 
+		   }
          if ( args[i].equals("-printq") ) {
             printQuadsNeeded = true;
+         }
+         if ( args[i].equals("-r") ) {
+            outputRCodeNeeded = true;
+            
+        	   fileNameR = args[i + 1];
+        	   if (i == args.length - 3 || fileNameR.substring(0,1).equals("-") || fileNameR.equals(null)){
+        		   fileNameR = "rcode";
+        	   }            
          }
       }
 	  
@@ -359,6 +466,9 @@ public class RobinsonQuads {
       }   
       if ( printQuadsNeeded ) {
          printQuads();
+      }
+      if ( outputRCodeNeeded ) {
+         outputRCode(fileNameR);
       }
    }
 }
