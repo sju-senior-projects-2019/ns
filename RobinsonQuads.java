@@ -231,6 +231,848 @@ public class RobinsonQuads {
    } //End findCentroid    
 
    // ----------------------------------------------------------------------------------------------
+   // BEGINNING OF SETTING ORDER
+   // ----------------------------------------------------------------------------------------------   
+
+   /**
+    * putInOrder - a method to coordinate correctly the appropriate points to p1, p2, p3, and p4
+    * @param i is the index of the quad
+    * @param p1 is the original coordinates of p1
+    * @param p2 is the original coordinates of p2
+    * @param p3 is the original coordinates of p3
+    * @param p4 is the original coordinates of p4
+    */
+   public static ArrayList<double[]> putInOrder( int i, double[] p1, double[] p2, double[] p3, double[] p4 ) {
+	  
+	  double quadCenX = ( QuadsX.get(i)[0] + QuadsX.get(i)[1] + QuadsX.get(i)[2] + QuadsX.get(i)[3] ) / 4;
+	  double quadCenY = ( QuadsY.get(i)[0] + QuadsY.get(i)[1] + QuadsY.get(i)[2] + QuadsY.get(i)[3] ) / 4;
+	  
+	  ArrayList<double[]> p1val = new ArrayList<double[]>();
+	  ArrayList<double[]> p2val = new ArrayList<double[]>();
+	  ArrayList<double[]> p3val = new ArrayList<double[]>();
+	  ArrayList<double[]> p4val = new ArrayList<double[]>();
+	  ArrayList<double[]> matchXVal = new ArrayList<double[]>();
+	  ArrayList<double[]> matchYVal = new ArrayList<double[]>();
+	  
+	  boolean threein1 = false;
+	  boolean threein2 = false;
+	  boolean threein3 = false;
+	  boolean threein4 = false;
+	  
+	  for ( int x = 0; x < 4; x++ ) {
+		  if ( QuadsX.get(i)[x] < quadCenX && QuadsY.get(i)[x] != quadCenY) {
+			  if ( QuadsY.get(i)[x] < quadCenY ) {
+				  double[] p1valarr = {QuadsX.get(i)[x], QuadsY.get(i)[x]};
+				  //System.out.println("P1 Arr: " + Arrays.toString(p1valarr));
+				  p1val.add(p1valarr);
+			  }
+			  else{
+				  double[] p4valarr = {QuadsX.get(i)[x], QuadsY.get(i)[x]};
+				  //System.out.println("P4 Arr: " + Arrays.toString(p4valarr));
+				  p4val.add(p4valarr);
+			  }
+		  }
+		  else if ( QuadsX.get(i)[x] > quadCenX && QuadsY.get(i)[x] != quadCenY){
+			  if ( QuadsY.get(i)[x] < quadCenY ) {
+				  double[] p2valarr = {QuadsX.get(i)[x], QuadsY.get(i)[x]};
+				  //System.out.println("P2 Arr: " + Arrays.toString(p2valarr));
+				  p2val.add(p2valarr);
+			  }
+			  else{
+				  double[] p3valarr = {QuadsX.get(i)[x], QuadsY.get(i)[x]};
+				  //System.out.println("P3 Arr: " + Arrays.toString(p3valarr));
+				  p3val.add(p3valarr);
+			  }
+		  }
+		  else if ( QuadsX.get(i)[x] == quadCenX && QuadsY.get(i)[x] != quadCenY) {
+			  double[] matchingXVals = {QuadsX.get(i)[x], QuadsY.get(i)[x]};
+			  matchXVal.add(matchingXVals);
+		  }
+		  else if ( QuadsX.get(i)[x] != quadCenX && QuadsY.get(i)[x] == quadCenY) {
+			  double[] matchingYVals = {QuadsX.get(i)[x], QuadsY.get(i)[x]};
+			  matchYVal.add(matchingYVals);
+		  }
+	  }
+	  
+     /**
+	  //FOR TESTING
+	  for (int f = 0; f < p1val.size(); f++){
+		  System.out.println("P1 " + Arrays.toString(p1val.get(f)));
+	  }
+	  for (int f = 0; f < p2val.size(); f++){
+		  System.out.println("P2 " + Arrays.toString(p2val.get(f)));
+	  }
+	  for (int f = 0; f < p3val.size(); f++){
+		  System.out.println("P3 " + Arrays.toString(p3val.get(f)));
+	  }
+	  for (int f = 0; f < p4val.size(); f++){
+		  System.out.println("P4 " + Arrays.toString(p4val.get(f)));
+	  }
+     */
+	  
+	  //P1 VALS
+	  if(p1val.size() > 1) {
+		  //Three in III
+		  if(p1val.size() == 3){
+			  threein1 = true;
+		  }
+		  //Two in III
+		  else if(p1val.size() == 2){
+			  //One in I & IV
+			  if(p4val.isEmpty() && !p2val.isEmpty()){
+				  if(p1val.get(0)[1] > p1val.get(1)[1]){
+					  p4 = p1val.get(0);
+					  p1 = p1val.get(1);
+				  }
+				  else if(p1val.get(0)[1] < p1val.get(1)[1]){
+					  p4 = p1val.get(1);
+					  p1 = p1val.get(0);
+				  }
+				  else{
+					  if(p1val.get(0)[0] > p1val.get(1)[0]){
+						  p1 = p1val.get(0);
+						  p4 = p1val.get(1);
+					  }
+					  else{
+						  p1 = p1val.get(1);
+						  p4 = p1val.get(0);
+					  }
+				  }
+			  }
+			  //Two in I & III
+			  else if(p4val.isEmpty() && p2val.isEmpty()){
+				  if(p1val.get(0)[0] > p1val.get(1)[0]){
+					  p2 = p1val.get(0);
+					  p1 = p1val.get(1);
+				  }
+				  else if(p1val.get(0)[0] < p1val.get(1)[0]){
+					  p2 = p1val.get(1);
+					  p1 = p1val.get(0);
+				  }
+				  else{
+					  if(p1val.get(0)[1] > p1val.get(1)[1]){
+						  p2 = p1val.get(0);
+						  p1 = p1val.get(1);
+					  }
+					  else{
+						  p2 = p1val.get(1);
+						  p1 = p1val.get(0);
+					  }
+				  }
+			  }
+			  //One in I & II
+			  else{
+				  if(p1val.get(0)[0] > p1val.get(1)[0]){
+					  p2 = p1val.get(0);
+					  p1 = p1val.get(1);
+				  }
+				  else if(p1val.get(0)[0] < p1val.get(1)[0]){
+					  p2 = p1val.get(1);
+					  p1 = p1val.get(0);
+				  }  
+				  else{
+					  if(p1val.get(0)[1] > p1val.get(1)[1]){
+						  p2 = p1val.get(0);
+						  p1 = p1val.get(1);
+					  }
+					  else{
+						  p2 = p1val.get(1);
+						  p1 = p1val.get(0);
+					  }
+				  }
+			  }
+		  }
+	  }
+	  //One in I
+	  else if(p1val.size() == 1) {
+		  if (matchYVal.size() == 2) {
+			  if (p2val.isEmpty()) {
+				  p2 = p1val.get(0);
+			  }
+		  }
+		  else{
+			  p1 = p1val.get(0);
+		  }
+	  }
+	  
+	  //P2 VALS
+	  if(p2val.size() > 1) {
+		  //Three in IV
+		  if(p2val.size() == 3){
+			  threein2 = true;
+		  }
+		  //Two in IV
+		  else if(p2val.size() == 2){
+			  //One in II & III
+			  if(p3val.isEmpty() && !p1val.isEmpty()){
+				  if(p2val.get(0)[1] > p2val.get(1)[1]){
+					  p3 = p2val.get(0);
+					  p2 = p2val.get(1);
+				  }
+				  else if(p2val.get(0)[1] < p2val.get(1)[1]){
+					  p3 = p2val.get(1);
+					  p2 = p2val.get(0);
+				  }
+				  else{
+					  if(p2val.get(0)[0] > p2val.get(1)[0]){
+						  p3 = p2val.get(0);
+						  p2 = p2val.get(1);
+					  }
+					  else{
+						  p3 = p2val.get(1);
+						  p2 = p2val.get(0);
+					  }
+				  }
+			  }
+			  //Two in II & IV
+			  else if(p3val.isEmpty() && p1val.isEmpty()){
+				  if(p2val.get(0)[0] > p2val.get(1)[0]){
+					  p2 = p2val.get(0);
+					  p1 = p2val.get(1);
+				  }
+				  else if(p2val.get(0)[0] < p2val.get(1)[0]){
+					  p2 = p2val.get(1);
+					  p1 = p2val.get(0);
+				  }	  
+				  else{
+					  if(p2val.get(0)[1] > p2val.get(1)[1]){
+						  p2 = p2val.get(0);
+						  p1 = p2val.get(1);
+					  }
+					  else{
+						  p2 = p2val.get(1);
+						  p1 = p2val.get(0);
+					  }
+				  }
+			  }
+			  //One in I & II
+			  else{
+				  if(p2val.get(0)[0] > p2val.get(1)[0]){
+					  p2 = p2val.get(0);
+					  p1 = p2val.get(1);
+				  }
+				  else if(p2val.get(0)[0] < p2val.get(1)[0]){
+					  p2 = p2val.get(1);
+					  p1 = p2val.get(0);
+				  }
+				  else{
+					  if(p2val.get(0)[1] > p2val.get(1)[1]){
+						  p2 = p2val.get(0);
+						  p1 = p2val.get(1);
+					  }
+					  else{
+						  p2 = p2val.get(1);
+						  p1 = p2val.get(0);
+					  }
+				  }
+			  }
+		  }
+	  }
+	  //One in IV
+	  else if(p2val.size() == 1) {
+		  if (matchXVal.size() == 2) {
+			  if (p3val.isEmpty()) {
+				  p3 = p2val.get(0);
+			  }
+		  }
+		  else{
+			  p2 = p2val.get(0);
+		  }
+	  }
+	  
+	  //P3 VALS
+	  if(p3val.size() > 1) {
+		  //Three in I
+		  if(p3val.size() == 3){
+			  threein3 = true;
+		  }
+		  //Two in I
+		  else if(p3val.size() == 2){
+			  //One in II & III
+			  if(p2val.isEmpty() && !p4val.isEmpty()){
+				  if(p3val.get(0)[1] > p3val.get(1)[1]){
+					  p3 = p3val.get(0);
+					  p2 = p3val.get(1);
+				  }
+				  else if(p3val.get(0)[1] < p3val.get(1)[1]){
+					  p3 = p3val.get(1);
+					  p2 = p3val.get(0);
+				  }
+				  else{
+					  if(p3val.get(0)[0] > p3val.get(1)[0]){
+						  p2 = p3val.get(0);
+						  p3 = p3val.get(1);
+					  }
+					  else{
+						  p2 = p3val.get(0);
+						  p3 = p3val.get(1);
+					  }
+				  }
+			  }
+			  //Two in I & III
+			  else if(p2val.isEmpty() && p4val.isEmpty()){
+				  
+				  assert(p3val.get(0)[0] - p2[0] != 0);
+				  double tempSlope1 = (p3val.get(0)[1] - p2[1]) / (p3val.get(0)[0] - p2[0]);
+				  assert (tempSlope1 != 0);
+				  double tempB1 = p2[1] - (tempSlope1 * p2[0]);	
+				  double tempY1 = (tempSlope1 * p3val.get(1)[0]) + tempB1;
+				 				  
+				  //Above line
+				  if(p3val.get(1)[1] > tempY1){
+					  p3 = p3val.get(0);
+					  p4 = p3val.get(1);
+					  
+					  assert(p4[0] - p1[0] != 0);
+					  double tempSlope2 = (p4[1] - p1[1]) / (p4[0] - p1[0]);
+					  assert (tempSlope2 != 0);
+					  double tempB2 = p1[1] - (tempSlope2 * p1[0]);
+					  double tempY2 = (tempSlope2 * p2[0]) + tempB2;
+					  
+					  if(p2[1] > tempY2){
+						  double[] tempp2 = {p2[0], p2[1]};
+						  double[] tempp3 = {p3[0], p3[1]};
+						  double[] tempp4 = {p4[0], p4[1]};
+						  p2 = tempp3;
+						  p3 = tempp4;
+						  p4 = tempp2;
+					  }
+				  }
+				  
+				  //Below line
+				  else{
+					  p3 = p3val.get(1);
+					  p4 = p3val.get(0);
+
+					  assert(p4[0] - p1[0] != 0);
+					  double tempSlope2 = (p4[1] - p1[1]) / (p4[0] - p1[0]);
+					  assert (tempSlope2 != 0);
+					  double tempB2 = p1[1] - (tempSlope2 * p1[0]);
+					  double tempY2 = (tempSlope2 * p2[0]) + tempB2;
+					  
+					  if(p2[1] > tempY2){
+						  double[] tempp2 = {p2[0], p2[1]};
+						  double[] tempp3 = {p3[0], p3[1]};
+						  double[] tempp4 = {p4[0], p4[1]};
+						  p2 = tempp3;
+						  p3 = tempp4;
+						  p4 = tempp2;
+					  }
+				  }
+			  }
+			  //One in III & IV 
+			  else{  
+				  if(p3val.get(0)[0] > p3val.get(1)[0]){
+					  p3 = p3val.get(0);
+					  p4 = p3val.get(1);
+				  }
+				  else if(p3val.get(0)[0] < p3val.get(1)[0]){
+					  p3 = p3val.get(1);
+					  p4 = p3val.get(0);
+				  }
+				  else{
+					  if(p3val.get(0)[1] > p3val.get(0)[1]){
+						  p4 = p3val.get(0);
+						  p3 = p3val.get(1);
+					  }
+					  else{
+						  p4 = p3val.get(1);
+						  p3 = p3val.get(0);
+					  }
+				  }
+			  }
+		  }
+	  }
+	  //One in I
+	  else if(p3val.size() == 1) {
+		  if (matchYVal.size() == 2) {
+			  if (p4val.isEmpty()) {
+				  p4 = p3val.get(0);
+			  }
+		  }
+		  else{
+			  p3 = p3val.get(0);
+		  }
+	  }
+	  
+	  //P4 VALS
+	  if(p4val.size() > 1) {
+		  //Three in II
+		  if(p4val.size() == 3){
+			  threein4 = true;
+		  }
+		  //Two in II
+		  else if(p4val.size() == 2){
+			  //One in I & IV
+			  if(p1val.isEmpty() && !p3val.isEmpty()){
+				  if(p4val.get(0)[1] > p4val.get(1)[1]){
+					  p4 = p4val.get(0);
+					  p1 = p4val.get(1);
+				  }
+				  else if(p4val.get(0)[1] < p4val.get(1)[1]){
+					  p4 = p4val.get(1);
+					  p1 = p4val.get(0);
+				  }
+				  else{
+					  if(p4val.get(0)[0] > p4val.get(1)[0]){
+						  p4 = p4val.get(0);
+						  p1 = p4val.get(1);
+					  }
+					  else{
+						  p4 = p4val.get(1);
+						  p1 = p4val.get(0);
+					  }
+				  }
+			  }
+			  //Two in II & IV
+			  else if(p1val.isEmpty() && p3val.isEmpty()){			  
+
+				  assert(p4val.get(0)[0] - p2[0] != 0);
+				  double tempSlope1 = (p4val.get(0)[1] - p2[1]) / (p4val.get(0)[0] - p2[0]);
+				  assert (tempSlope1 != 0);
+				  double tempB1 = p2[1] - (tempSlope1 * p2[0]);	
+				  double tempY1 = (tempSlope1 * p4val.get(1)[0]) + tempB1;
+				 				  
+				  //Above line
+				  if(p4val.get(1)[1] > tempY1){
+					  p3 = p4val.get(1);
+					  p4 = p4val.get(0);
+					  
+					  assert(p4[0] - p1[0] != 0);
+					  double tempSlope2 = (p4[1] - p1[1]) / (p4[0] - p1[0]);
+					  assert (tempSlope2 != 0);
+					  double tempB2 = p1[1] - (tempSlope2 * p1[0]);
+					  double tempY2 = (tempSlope2 * p2[0]) + tempB2;
+					  
+					  if(p2[1] < tempY2){
+						  double[] tempp1 = {p1[0], p1[1]};
+						  double[] tempp3 = {p3[0], p3[1]};
+						  double[] tempp4 = {p4[0], p4[1]};
+						  p1 = tempp4;
+						  p3 = tempp1;
+						  p4 = tempp3;
+					  }				  
+				  }
+				  
+				  //Below line
+				  else{
+					  p3 = p4val.get(0);
+					  p4 = p4val.get(1);
+					  
+					  assert(p4[0] - p1[0] != 0);
+					  double tempSlope2 = (p4[1] - p1[1]) / (p4[0] - p1[0]);
+					  assert (tempSlope2 != 0);
+					  double tempB2 = p1[1] - (tempSlope2 * p1[0]);
+					  double tempY2 = (tempSlope2 * p2[0]) + tempB2;
+					  
+					  if(p2[1] < tempY2){
+						  double[] tempp1 = {p1[0], p1[1]};
+						  double[] tempp3 = {p3[0], p3[1]};
+						  double[] tempp4 = {p4[0], p4[1]};
+						  p1 = tempp4;
+						  p3 = tempp1;
+						  p4 = tempp3;
+					  }
+
+				  }  
+			  }
+			  //One in III & IV
+			  else{  
+				  if(p4val.get(0)[0] > p4val.get(1)[0]){
+					  p3 = p4val.get(0);
+					  p4 = p4val.get(1);
+				  }
+				  else if(p4val.get(0)[0] < p4val.get(1)[0]){
+					  p3 = p4val.get(1);
+					  p4 = p4val.get(0);
+				  }
+				  else{
+					  if(p4val.get(0)[1] > p4val.get(1)[1]){
+						  p3 = p4val.get(0);
+						  p4 = p4val.get(1);
+					  }
+					  else{
+						  p3 = p4val.get(1);
+						  p4 = p4val.get(0);
+					  }
+				  }
+			  }
+		  }
+	  }
+	  //One in II
+	  else if(p4val.size() == 1) {
+		  if (matchXVal.size() == 2) {
+			  if (p1val.isEmpty()) {
+				  p1 = p4val.get(0);
+			  }
+		  }
+		  else{
+			  p4 = p4val.get(0);
+		  }
+	  }
+
+	  /*
+	  USED FOR TESTING
+	  double[] tempp1 = {p1[0], p2[1]};
+	  double[] tempp2 = {p2[0], p2[1]};
+	  double[] tempp3 = {p3[0], p3[1]};
+	  double[] tempp4 = {p4[0], p4[1]};
+	  p1 = tempp1;
+	  p2 = tempp1;
+	  p3 = tempp1;
+	  p4 = tempp1;
+	  */
+	  
+	  //P3 is already chosen
+	  //Three points in III
+	  if(threein1){
+		  //Line from p3 to one of the other points in III
+		  assert(p1val.get(0)[0] - p3[0] != 0);
+		  double slope = (p1val.get(0)[1] - p3[1]) / (p1val.get(0)[0] - p3[0]);
+		  assert (slope != 0);
+		  double b = p3[1] - (slope * p3[0]);	
+		  double tempy1 = (slope * p1val.get(1)[0]) + b;
+		  double tempy2 = (slope * p1val.get(2)[0]) + b;
+
+		  //Line is above other two points
+		  if(p1val.get(1)[1] < tempy1 && p1val.get(2)[1] < tempy2){
+			  
+			  assert(p1val.get(1)[0] - p3[0] != 0);
+			  double slopeBot2 = (p1val.get(1)[1] - p3[1]) / (p1val.get(1)[0] - p3[0]);
+			  assert (slopeBot2 != 0);
+			  double bBot2 = p3[1] - (slopeBot2 * p3[0]);	
+			  double tempy1Bot2 = (slopeBot2 * p1val.get(2)[0]) + bBot2;
+			 
+			  if(p1val.get(2)[1] > tempy1Bot2){
+				  p4 = p1val.get(0);
+			      p1 = p1val.get(2);
+				  p2 = p1val.get(1);
+			  }
+			  else if(p1val.get(2)[1] < tempy1Bot2){
+				  p4 = p1val.get(0);
+				  p1 = p1val.get(1);
+				  p2 = p1val.get(2);
+			  }
+		  }
+		  //Line is in-between other two points
+		  else if(p1val.get(1)[1] > tempy1 && p1val.get(2)[1] < tempy2){
+		  	  p4 = p1val.get(1);
+			  p1 = p1val.get(0);
+			  p2 = p1val.get(2);
+		  }
+		  //Line is in-between other two points
+		  else if(p1val.get(1)[1] < tempy1 && p1val.get(2)[1] > tempy2){
+		  	  p4 = p1val.get(2);
+			  p1 = p1val.get(0);
+			  p2 = p1val.get(1);
+		  }
+		  //Line is below other two points
+		  else if(p1val.get(1)[1] > tempy1 && p1val.get(2)[1] > tempy2){
+			  assert(p1val.get(1)[0] - p3[0] != 0);
+			  double slopeTop2 = (p1val.get(1)[1] - p3[1]) / (p1val.get(1)[0] - p3[0]);
+			  assert (slopeTop2 != 0);
+			  double bTop2 = p3[1] - (slopeTop2 * p3[0]);	
+			  double tempy1Top2 = (slopeTop2 * p1val.get(2)[0]) + bTop2;
+			  
+			  if(p1val.get(2)[1] > tempy1Top2){
+				  p4 = p1val.get(2);
+			      p1 = p1val.get(1);
+				  p2 = p1val.get(0);
+			  }
+			  else if(p1val.get(2)[1] < tempy1Top2){
+				  p4 = p1val.get(1);
+				  p1 = p1val.get(2);
+				  p2 = p1val.get(0);
+			  }
+		  }
+		  else{
+		  	  System.err.println("Point fell on the line in P3");
+		  }
+	  }
+	  
+	  //P4 is already chosen
+	  //Three points in IV
+	  if(threein2){
+		  //Line from p4 to one of the other points in IV
+		  assert(p2val.get(0)[0] - p4[0] != 0);
+		  double slope = (p2val.get(0)[1] - p4[1]) / (p2val.get(0)[0] - p4[0]);
+		  assert (slope != 0);
+		  double b = p4[1] - (slope * p4[0]);	
+		  double tempy1 = (slope * p2val.get(1)[0]) + b;
+		  double tempy2 = (slope * p2val.get(2)[0]) + b;
+
+		  //Line is above other two points
+		  if(p2val.get(1)[1] < tempy1 && p2val.get(2)[1] < tempy2){
+			  
+			  assert(p2val.get(1)[0] - p4[0] != 0);
+			  double slopeBot2 = (p2val.get(1)[1] - p4[1]) / (p2val.get(1)[0] - p4[0]);
+			  assert (slopeBot2 != 0);
+			  double bBot2 = p4[1] - (slopeBot2 * p4[0]);	
+			  double tempy1Bot2 = (slopeBot2 * p2val.get(2)[0]) + bBot2;
+			 
+			  if(p2val.get(2)[1] > tempy1Bot2){
+				  p1 = p2val.get(0);
+			      p3 = p2val.get(2);
+				  p2 = p2val.get(1);
+			  }
+			  else if(p2val.get(2)[1] < tempy1Bot2){
+				  p1 = p2val.get(0);
+				  p3 = p2val.get(1);
+				  p2 = p2val.get(2);
+			  }
+		  }
+		  //Line is in-between other two points
+		  else if(p2val.get(1)[1] > tempy1 && p2val.get(2)[1] < tempy2){
+		  	  p3 = p2val.get(1);
+			  p2 = p2val.get(0);
+			  p1 = p2val.get(2);
+		  }
+		  //Line is in-between other two points
+		  else if(p2val.get(1)[1] < tempy1 && p2val.get(2)[1] > tempy2){
+		  	  p3 = p2val.get(2);
+			  p2 = p2val.get(0);
+			  p1 = p2val.get(1);
+		  }
+		  //Line is below other two points
+		  else if(p2val.get(1)[1] > tempy1 && p2val.get(2)[1] > tempy2){
+			  assert(p2val.get(1)[0] - p4[0] != 0);
+			  double slopeTop2 = (p2val.get(1)[1] - p4[1]) / (p2val.get(1)[0] - p4[0]);
+			  assert (slopeTop2 != 0);
+			  double bTop2 = p4[1] - (slopeTop2 * p4[0]);	
+			  double tempy1Top2 = (slopeTop2 * p2val.get(2)[0]) + bTop2;
+			  
+			  if(p2val.get(2)[1] > tempy1Top2){
+				  p3 = p2val.get(2);
+			      p2 = p2val.get(1);
+				  p1 = p2val.get(0);
+			  }
+			  else if(p2val.get(2)[1] < tempy1Top2){
+				  p3 = p2val.get(1);
+				  p2 = p2val.get(2);
+				  p1 = p2val.get(0);
+			  }
+		  }
+		  else{
+		  	  System.err.println("Point fell on the line in P4");
+		  }
+	  }
+	  
+	  //P1 is already chosen
+	  //Three points in I
+	  if(threein3){
+		  //Line from p1 to one of the other points in I
+		  assert(p3val.get(0)[0] - p1[0] != 0);
+		  double slope = (p3val.get(0)[1] - p1[1]) / (p3val.get(0)[0] - p1[0]);
+		  assert (slope != 0);
+		  double b = p1[1] - (slope * p1[0]);	
+		  double tempy1 = (slope * p3val.get(1)[0]) + b;
+		  double tempy2 = (slope * p3val.get(2)[0]) + b;
+
+		  //Line is above other two points
+		  if(p3val.get(1)[1] < tempy1 && p3val.get(2)[1] < tempy2){
+			  
+			  assert(p3val.get(1)[0] - p1[0] != 0);
+			  double slopeBot2 = (p3val.get(1)[1] - p1[1]) / (p3val.get(1)[0] - p1[0]);
+			  assert (slopeBot2 != 0);
+			  double bBot2 = p1[1] - (slopeBot2 * p1[0]);	
+			  double tempy1Bot2 = (slopeBot2 * p3val.get(2)[0]) + bBot2;
+			 
+			  if(p3val.get(2)[1] > tempy1Bot2){
+				  p4 = p3val.get(0);
+			      p3 = p3val.get(2);
+				  p2 = p3val.get(1);
+			  }
+			  else if(p3val.get(2)[1] < tempy1Bot2){
+				  p4 = p3val.get(0);
+				  p3 = p3val.get(1);
+				  p2 = p3val.get(2);
+			  }
+		  }
+		  //Line is in-between other two points
+		  else if(p3val.get(1)[1] > tempy1 && p3val.get(2)[1] < tempy2){
+		  	  p4 = p3val.get(1);
+			  p3 = p3val.get(0);
+			  p2 = p3val.get(2);
+		  }
+		  //Line is in-between other two points
+		  else if(p3val.get(1)[1] < tempy1 && p3val.get(2)[1] > tempy2){
+		  	  p4 = p3val.get(2);
+			  p3 = p3val.get(0);
+			  p2 = p3val.get(1);
+		  }
+		  //Line is below other two points
+		  else if(p3val.get(1)[1] > tempy1 && p3val.get(2)[1] > tempy2){
+			  assert(p3val.get(1)[0] - p1[0] != 0);
+			  double slopeTop2 = (p3val.get(1)[1] - p1[1]) / (p3val.get(1)[0] - p1[0]);
+			  assert (slopeTop2 != 0);
+			  double bTop2 = p1[1] - (slopeTop2 * p1[0]);	
+			  double tempy1Top2 = (slopeTop2 * p3val.get(2)[0]) + bTop2;
+			  
+			  if(p3val.get(2)[1] > tempy1Top2){
+				  p4 = p3val.get(2);
+			      p3 = p3val.get(1);
+				  p2 = p3val.get(0);
+			  }
+			  else if(p3val.get(2)[1] < tempy1Top2){
+				  p4 = p3val.get(1);
+				  p3 = p3val.get(2);
+				  p2 = p3val.get(0);
+			  }
+		  }
+		  else{
+		  	  System.err.println("Point fell on the line in P1");
+		  }
+	  }
+	  
+	  //P2 is already chosen
+	  //Three points in II
+	  if(threein4){
+		  //Line from p2 to one of the other points in II
+		  assert(p4val.get(0)[0] - p2[0] != 0);
+		  double slope = (p4val.get(0)[1] - p2[1]) / (p4val.get(0)[0] - p2[0]);
+		  assert (slope != 0);
+		  double b = p2[1] - (slope * p2[0]);	
+		  double tempy1 = (slope * p4val.get(1)[0]) + b;
+		  double tempy2 = (slope * p4val.get(2)[0]) + b;
+
+		  //Line is above other two points
+		  if(p4val.get(1)[1] < tempy1 && p4val.get(2)[1] < tempy2){
+			  
+			  assert(p4val.get(1)[0] - p2[0] != 0);
+			  double slopeBot2 = (p4val.get(1)[1] - p2[1]) / (p4val.get(1)[0] - p2[0]);
+			  assert (slopeBot2 != 0);
+			  double bBot2 = p2[1] - (slopeBot2 * p2[0]);	
+			  double tempy1Bot2 = (slopeBot2 * p4val.get(2)[0]) + bBot2;
+			 
+			  if(p4val.get(2)[1] > tempy1Bot2){
+				  p3 = p4val.get(0);
+			      p4 = p4val.get(2);
+				  p1 = p4val.get(1);
+			  }
+			  else if(p4val.get(2)[1] < tempy1Bot2){
+				  p3 = p4val.get(0);
+				  p4 = p3val.get(1);
+				  p1 = p3val.get(2);
+			  }
+		  }
+		  //Line is in-between other two points
+		  else if(p4val.get(1)[1] > tempy1 && p4val.get(2)[1] < tempy2){
+		  	  p3 = p4val.get(1);
+			  p4 = p4val.get(0);
+			  p1 = p4val.get(2);
+		  }
+		  //Line is in-between other two points
+		  else if(p4val.get(1)[1] < tempy1 && p4val.get(2)[1] > tempy2){
+		  	  p3 = p4val.get(2);
+			  p4 = p4val.get(0);
+			  p1 = p4val.get(1);
+		  }
+		  //Line is below other two points
+		  else if(p4val.get(1)[1] > tempy1 && p4val.get(2)[1] > tempy2){
+			  assert(p4val.get(1)[0] - p2[0] != 0);
+			  double slopeTop2 = (p4val.get(1)[1] - p2[1]) / (p4val.get(1)[0] - p2[0]);
+			  assert (slopeTop2 != 0);
+			  double bTop2 = p2[1] - (slopeTop2 * p2[0]);	
+			  double tempy1Top2 = (slopeTop2 * p4val.get(2)[0]) + bTop2;
+			  
+			  if(p4val.get(2)[1] > tempy1Top2){
+				  p3 = p4val.get(2);
+			      p4 = p4val.get(1);
+				  p1 = p4val.get(0);
+			  }
+			  else if(p4val.get(2)[1] < tempy1Top2){
+				  p3 = p4val.get(1);
+				  p4 = p4val.get(2);
+				  p1 = p4val.get(0);
+			  }
+		  }
+		  else{
+		  	  System.err.println("Point fell on the line in P2");
+		  }
+	  }
+	  
+	//For values that are the same X as the centroid
+	  if(!matchXVal.isEmpty()){
+		  for(int x = 0; x < matchXVal.size(); x++){
+			  if(matchXVal.get(x)[1] < quadCenY){
+				  if(matchXVal.size() == 2){
+					  p2 = matchXVal.get(x);
+				  }
+				  else{
+					  if(p1val.isEmpty()){
+						  p1 = matchXVal.get(x);
+					  }
+					  else if(p2val.isEmpty()){
+						  p2 = matchXVal.get(x);
+					  }
+				  }
+			  }
+			  else if(matchXVal.get(x)[1] > quadCenY){
+				  if(matchXVal.size() == 2){
+					  p4 = matchXVal.get(x);
+				  }
+				  else{
+					  if(p4val.isEmpty()){
+						  p4 = matchXVal.get(x);
+					  }
+					  else if(p3val.isEmpty()){
+						  p3 = matchXVal.get(x);
+					  }
+				  }
+			  }
+		  }
+	  }
+	  
+	  //For values that are the same Y as the centroid
+	  if(!matchYVal.isEmpty()){
+		  for(int x = 0; x < matchYVal.size(); x++){
+			  if(matchYVal.get(x)[0] < quadCenX){
+				  if (matchYVal.size() == 2){
+					  p1 = matchYVal.get(x);
+				  }
+				  else{
+					  if (p1val.isEmpty()){
+						  p1 = matchYVal.get(x);
+					  }	
+					  else if(p4val.isEmpty()){
+						  p4 = matchYVal.get(x);
+					  }
+				  }
+			  }
+			  else if(matchYVal.get(x)[0] > quadCenX){
+				  if(matchYVal.size() == 2){
+					  p3 = matchYVal.get(x);
+				  }
+				  else{
+					  if(p3val.isEmpty()){
+						  p3 = matchYVal.get(x);
+					  }
+					  else if(p2val.isEmpty()){
+						  p2 = matchYVal.get(x);
+					  }
+				  }
+			  }
+		  }
+	  }
+
+
+	  ArrayList<double[]> finalVals = new ArrayList<double[]>();
+	  finalVals.add(p1);
+	  finalVals.add(p2);
+	  finalVals.add(p3);
+	  finalVals.add(p4);
+
+      //Places the Quads in order in ArrayLists for printing
+      double[] newValsX = {p1[0], p2[0], p3[0], p4[0]};
+      QuadsX.set(i, newValsX);
+
+      double[] newValsY = {p1[1], p2[1], p3[1], p4[1]};
+      QuadsY.set(i, newValsY);
+   
+      return finalVals;
+   } //End putInOrder      
+
+   // ----------------------------------------------------------------------------------------------
    // BEGINNING OF SET METHODS
    // ----------------------------------------------------------------------------------------------      
    
@@ -277,6 +1119,42 @@ public class RobinsonQuads {
          
       }    
    } //End setQuads   
+   
+   /**
+    * setCalculations - a method to run the calculations for the various methods
+    * @param i is the index of the quad
+    */
+   public static void setCalculations(int i) {
+	   
+	   double[] p1 = {QuadsX.get(i)[0], QuadsY.get(i)[0]};
+	   double[] p2 = {QuadsX.get(i)[1], QuadsY.get(i)[1]};
+	   double[] p3 = {QuadsX.get(i)[2], QuadsY.get(i)[2]};
+	   double[] p4 = {QuadsX.get(i)[3], QuadsY.get(i)[3]};
+	  
+	  
+	   System.out.println("Center: " + ((p1[0] + p2[0] + p3[0] + p4[0]) / 4) + " " + ((p1[1] + p2[1] + p3[1] + p4[1]) / 4));
+	   System.out.println("Before order");
+	   System.out.println("Quad " + (i + 1));
+	   System.out.println(p1[0] + " " + p1[1]);
+	   System.out.println(p2[0] + " " + p2[1]);
+	   System.out.println(p3[0] + " " + p3[1]);
+	   System.out.println(p4[0] + " " + p4[1]);	    
+      
+      ArrayList<double[]> newCoords = putInOrder(i, p1, p2, p3, p4); 
+      p1 = newCoords.get(0);
+      p2 = newCoords.get(1);
+      p3 = newCoords.get(2);
+      p4 = newCoords.get(3);
+      
+      System.out.println("After order");
+      System.out.println("Quad " + (i + 1));
+	   System.out.println(p1[0] + " " + p1[1]);
+	   System.out.println(p2[0] + " " + p2[1]);
+	   System.out.println(p3[0] + " " + p3[1]);
+	   System.out.println(p4[0] + " " + p4[1]);
+	   System.out.println();   
+
+   } //End of setCalculations
    
    // ----------------------------------------------------------------------------------------------
    // BEGINNING OF PRINT METHODS
@@ -460,6 +1338,9 @@ public class RobinsonQuads {
       triangle = findTriangles(args); //Holds the triangles
       vertex = findVertices(args); //Holds the vertices
       setQuads(); //Sets the values for the quads            
+      for(int i = 0; i < QuadsX.size(); i++){
+    	   setCalculations(i); //Sets the values for the calculations
+      }
 
       if ( printTrianglesNeeded ) {
          printTriVertex(args);
