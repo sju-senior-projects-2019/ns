@@ -1,7 +1,7 @@
 /**
  * ReadTriangle reads in points from a triangle file
  * @author Nicholas Senatore
- * @since 3/4/2019
+ * @since 4/1/2019
  */
 
 import java.io.*;
@@ -9,6 +9,7 @@ import java.util.Scanner;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.io.FileNotFoundException; 
+import java.math.BigDecimal;
 
 public class RobinsonQuads {
 	
@@ -47,6 +48,12 @@ public class RobinsonQuads {
    
    /* Holds the y values for the centroids for each line segment */
    public static ArrayList<Double> CentroidY = new ArrayList<Double>();   	
+   
+   /* Holds the aspect ratio values for the Jacobian */
+   public static ArrayList<Double> jAspectRatio = new ArrayList<Double>();
+
+   /* Holds the skew values for the Jacobian */
+   public static ArrayList<Double> jSkew = new ArrayList<Double>();   
 	
    /**
     * findVertices - a method to find the vertices for each of the triangles
@@ -229,6 +236,234 @@ public class RobinsonQuads {
          CentroidY.add(CY);
       }      
    } //End findCentroid    
+
+   // ----------------------------------------------------------------------------------------------
+   // BEGINNING OF JACOBIAN METHODS
+   // ----------------------------------------------------------------------------------------------
+
+   /**
+    * calculateJAR - a method to find the Jacobian Aspect Ratio
+    * @param i is the index of the quad
+    * @param p1 is the original coordinates of p1
+    * @param p2 is the original coordinates of p2
+    * @param p3 is the original coordinates of p3
+    * @param p4 is the original coordinates of p4
+    * @return the Jacobian Aspect Ratio
+    */
+   public static double calculateJAR( int i, double[] p1, double[] p2, double[] p3, double[] p4 ) {    
+       
+      // 1, -2 / 1.5, -.5 / 1, 0 / .5, -.5  
+	         
+      double[] e = new double[4];
+      double[] f = new double[4];
+      
+      findEF(p1, p2, p3, p4, e, f);        
+      
+      /*
+      System.out.println("E2: " + e[1]);
+      System.out.println("F3: " + f[2]);
+      */
+      
+      assert ( f[2] != 0 && e[1] != 0 );
+      
+      double aspR1 = e[1]/f[2]; // 0.5
+      double aspR2 = f[2]/e[1]; // 2
+
+      /*
+      System.out.println("ASP Rats: " + aspR1 + " " + aspR2);
+      System.out.println(Math.max(aspR1, aspR2));
+      System.out.println();
+	  */
+
+      jAspectRatio.add(i, Math.max(aspR1, aspR2));
+      
+      return Math.max(aspR1, aspR2); //Aspect Ratio is the max of the two given variables
+   } //End calculateJAR
+   
+   /**
+    * calculateJSkewAngle - a method to find the Jacobian Skew Angle
+    * @param i is the index of the quad
+    * @param p1 is the original coordinates of p1
+    * @param p2 is the original coordinates of p2
+    * @param p3 is the original coordinates of p3
+    * @param p4 is the original coordinates of p4
+    * @return the Jacobian Skew Angle
+    */   
+   public static double calculateJSkewAngle( int i, double[] p1, double[] p2, double[] p3, double[] p4 ) { 
+            
+      double[] e = new double[4];
+      double[] f = new double[4];
+      
+      findEF(p1, p2, p3, p4, e, f);
+                 
+      assert ( f[2] != 0 );
+                       
+      jSkew.add(i, e[2] / f[2]);
+      
+      return (e[2] / f[2]); // -0.5
+   } //End calculateJSkewAngle
+
+   /**
+    * findEF - a method to find the values for e1, e2, e3, e4, f1, f2, f3, and f4
+    * @param i is the index of the quad
+    * @param p1 is the original coordinates of p1
+    * @param p2 is the original coordinates of p2
+    * @param p3 is the original coordinates of p3
+    * @param p4 is the original coordinates of p4
+    */   
+   public static void findEF( double[] p1, double[] p2, double[] p3, double[] p4, double[] e, double[] f ) {
+   
+      // 1, -2 / 1.5, -.5 / 1, 0 / .5, -.5     
+      e[0] = (p1[0] + p2[0] + p3[0] + p4[0]) / 4;               //e1 = 1
+      e[1] = (-p1[0] + p2[0] + p3[0] + -p4[0]) / 4; //e2 = 0.25
+      e[2] = (-p1[0] + -p2[0] + p3[0] + p4[0]) / 4; //e3 = -0.25       
+      e[3] = (p1[0] + -p2[0] + p3[0] + -p4[0]) / 4; //e4 = 0
+
+      f[0] = (p1[1] + p2[1] + p3[1] + p4[1]) / 4;               //f1 = -0.75
+      f[1] = (-p1[1] + p2[1] + p3[1] + -p4[1]) / 4; //f2 = 0.5
+      f[2] = (-p1[1] + -p2[1] + p3[1] + p4[1]) / 4; //f3 = 0.5
+      f[3] = (p1[1] + -p2[1] + p3[1] + -p4[1]) / 4; //f4 = -0.25
+   } //End findEF
+   
+   /**
+    * outputARJ - a method to output the aspect ratio values for the Jacobian (MUST TYPE "-jaspectratio")
+    * @param fileNameJAR is the file name 
+    * @param verbose determines the verbose level
+    */
+   public static void outputARJ(String fileNameJAR, int verbose) throws FileNotFoundException {
+	  String artext = "";
+	  BigDecimal min = BigDecimal.valueOf(jAspectRatio.get(0));
+	  BigDecimal max = BigDecimal.valueOf(jAspectRatio.get(0));
+	  int minpos = 1;
+	  int maxpos = 1;
+	  if (verbose > 0){
+		  artext += "ASPECT RATIOS FOR JACOBIAN" + System.lineSeparator();
+	  }
+	  for ( int i = 0; i < jAspectRatio.size(); i++ ) {
+		  if(Double.isInfinite(jAspectRatio.get(i))){
+			  artext = artext + BigDecimal.valueOf(2147483647) + " #" + (i + 1) + ", ";
+		  }
+		  else{
+			  artext = artext + BigDecimal.valueOf(jAspectRatio.get(i)) + " #" + (i + 1) + ", ";
+		  }
+		  if ((i + 1) % 3 == 0){
+			  artext += "triangle " + ((i + 1) / 3) + System.lineSeparator();
+		  }
+		  else{
+			  artext += "triangle " + (((i + 1) / 3) + 1) + System.lineSeparator();
+		  }
+		  if(Double.isInfinite(jAspectRatio.get(i))){
+			  if (BigDecimal.valueOf(2147483647).compareTo(max) > 0){
+				  max = BigDecimal.valueOf(2147483647);
+				  maxpos = i + 1;
+			  }
+			  if (BigDecimal.valueOf(2147483647).compareTo(min) < 0){
+				  min = BigDecimal.valueOf(2147483647);
+				  minpos = i + 1;
+			  }
+		  }
+		  else{
+			  if (BigDecimal.valueOf(jAspectRatio.get(i)).compareTo(max) > 0){
+				  max = BigDecimal.valueOf(jAspectRatio.get(i));
+				  maxpos = i + 1;
+			  }
+			  if (BigDecimal.valueOf(jAspectRatio.get(i)).compareTo(min) < 0){
+				  min = BigDecimal.valueOf(jAspectRatio.get(i));
+				  minpos = i + 1;
+			  }
+		  }
+	  }
+	  
+	  if (verbose > 0) {
+		  artext += "#The minimum value is " + min + ", which is in quad " + minpos + " {" + findQuadsCoordinates(minpos - 1) + "}, which is in triangle ";
+		  if (minpos % 3 == 0){
+			  artext += (minpos / 3) + " {" + findTrianglesCoordinates(minpos / 3) + "}" + System.lineSeparator();
+		  }
+		  else{
+			  artext += ((minpos / 3) + 1) + " {" + findTrianglesCoordinates((minpos / 3) + 1) + "}" + System.lineSeparator();
+		  }
+		  artext += "#The maximum value is " + max + ", which is in quad " + maxpos + " {" + findQuadsCoordinates(maxpos - 1) + "}, which is in triangle ";
+		  if (maxpos % 3 == 0){
+			  artext += (maxpos / 3) + " {" + findTrianglesCoordinates(maxpos / 3) + "}" + System.lineSeparator();
+		  }
+		  else{
+			  artext += ((maxpos / 3) + 1) + " {" + findTrianglesCoordinates((maxpos / 3) + 1) + "}" + System.lineSeparator();
+		  }
+		  artext += "#The mean average is " + findMean(jAspectRatio) + System.lineSeparator();
+		  
+	  }
+	  
+	  try (PrintWriter out = new PrintWriter(fileNameJAR + ".txt")){
+		  out.println(artext);
+	  }
+      catch (FileNotFoundException e) { //Checks for file not found exception
+          System.err.println("Problem creating files");
+          System.err.println(e.getMessage()); 
+          throw e;
+      }   
+   } //End outputARJ        
+   
+   /**
+    * outputSkewJ - a method to output the skew values for the Jacobian (MUST TYPE "-jskew")
+    * @param fileNameJS is the file name 
+    * @param verbose determines the verbose level
+    */
+   public static void outputSkewJ(String fileNameJS, int verbose) throws FileNotFoundException {
+	  BigDecimal min = BigDecimal.valueOf(jSkew.get(0));
+	  BigDecimal max = BigDecimal.valueOf(jSkew.get(0));
+	  int minpos = 1;
+	  int maxpos = 1;
+	   String skewtext = "";
+	  if (verbose > 0){
+		  skewtext += "SKEWS FOR JACOBIAN" + System.lineSeparator();
+	  }
+	  for ( int i = 0; i < jSkew.size(); i++ ) {
+		  skewtext = skewtext + BigDecimal.valueOf(jSkew.get(i)) + " #" + (i + 1) + ", ";
+		  if ((i + 1) % 3 == 0){
+			  skewtext += "triangle " + ((i + 1) / 3) + System.lineSeparator();
+		  }
+		  else{
+			  skewtext += "triangle " + (((i + 1) / 3) + 1) + System.lineSeparator();
+		  }
+		  if (BigDecimal.valueOf(jSkew.get(i)).compareTo(max) > 0){
+			  max = BigDecimal.valueOf(jSkew.get(i));
+			  maxpos = i + 1;
+		  }
+		  if (BigDecimal.valueOf(jSkew.get(i)).compareTo(min) < 0){
+			  min = BigDecimal.valueOf(jSkew.get(i));
+			  minpos = i + 1;
+		  }
+	  }
+	  
+	  if (verbose > 0) {
+		  skewtext += "#The minimum value is " + min + ", which is in quad " + minpos + " {" + findQuadsCoordinates(minpos - 1) + "}, which is in triangle ";
+		  if (minpos % 3 == 0){
+			  skewtext += (minpos / 3) + " {" + findTrianglesCoordinates(minpos / 3) + "}" + System.lineSeparator();
+		  }
+		  else{
+			  skewtext += ((minpos / 3) + 1) + " {" + findTrianglesCoordinates((minpos / 3) + 1) + "}" + System.lineSeparator();
+		  }
+		  skewtext += "#The maximum value is " + max + ", which is in quad " + maxpos + " {" + findQuadsCoordinates(maxpos - 1) + "}, which is in triangle ";
+		  if (maxpos % 3 == 0){
+			  skewtext += (maxpos / 3) + " {" + findTrianglesCoordinates(maxpos / 3) + "}" + System.lineSeparator();
+		  }
+		  else{
+			  skewtext += ((maxpos / 3) + 1) + " {" + findTrianglesCoordinates((maxpos / 3) + 1) + "}" + System.lineSeparator();
+		  }
+		  skewtext += "#The mean average is " + findMean(jSkew) + System.lineSeparator();
+		  
+	  }
+	  
+	  try (PrintWriter out = new PrintWriter(fileNameJS + ".txt")){
+		  out.println(skewtext);
+	  }
+      catch (FileNotFoundException e) { //Checks for file not found exception
+          System.err.println("Problem creating files");
+          System.err.println(e.getMessage()); 
+          throw e;
+      }   
+   } //End outputSkewJ   
+   
 
    // ----------------------------------------------------------------------------------------------
    // BEGINNING OF SETTING ORDER
@@ -1153,6 +1388,9 @@ public class RobinsonQuads {
 	   System.out.println(p3[0] + " " + p3[1]);
 	   System.out.println(p4[0] + " " + p4[1]);
 	   System.out.println();   
+      
+      calculateJAR( i, p1, p2, p3, p4 );
+	   calculateJSkewAngle( i, p1, p2, p3, p4 );
 
    } //End of setCalculations
    
@@ -1301,6 +1539,46 @@ public class RobinsonQuads {
    } //End outputRCode
    
    // ----------------------------------------------------------------------------------------------
+   // HELPER METHODS
+   // ----------------------------------------------------------------------------------------------     
+
+   /**
+    * findTrianglesCoordinates - a method to find the X and Y coordinates for each of the three points in a certain triangle
+    * @param triangle_number is the number of the triangle being observed
+    * @return a string that displays the X and Y coordinates for each of the three points in a certain triangle
+    */
+   public static String findTrianglesCoordinates(int triangle_number){
+	   return "(" + x.get(triangle_number)[0] + ", " + y.get(triangle_number)[0] + ")" +
+			  "(" + x.get(triangle_number)[1] + ", " + y.get(triangle_number)[1] + ")" +
+			  "(" + x.get(triangle_number)[2] + ", " + y.get(triangle_number)[2] + ")";
+   } //End findTrianglesCoordinates
+   
+   /**
+    * findQuadsCoordinates - a method to find the X and Y coordinates for each of the four points in a certain quad
+    * @param quad_number is the number of the quad being observed
+    * @return a string that displays the X and Y coordinates for each of the four points in a certain quad
+    */
+   public static String findQuadsCoordinates(int quad_number) {
+	   return "(" + QuadsX.get(quad_number)[0] + ", " + QuadsY.get(quad_number)[0] + ")" +
+			  "(" + QuadsX.get(quad_number)[1] + ", " + QuadsY.get(quad_number)[1] + ")" +
+			  "(" + QuadsX.get(quad_number)[2] + ", " + QuadsY.get(quad_number)[2] + ")" +
+			  "(" + QuadsX.get(quad_number)[3] + ", " + QuadsY.get(quad_number)[3] + ")";
+   } //End findQuadsCoordinates
+   
+   /**
+    * findMean - a method to find the mean of a certain set of values
+    * @param values is the ArrayList that contains the values to be averaged
+    * @return the mean (average) of the list of values
+    */
+   public static double findMean(ArrayList<Double> values){
+	   double mean = 0;
+	   for ( int i = 0; i < values.size(); i++ ) {
+		   mean += values.get(i);
+	   }
+	   return mean / values.size();
+   } //End findMean
+   
+   // ----------------------------------------------------------------------------------------------
    // MAIN METHOD
    // ----------------------------------------------------------------------------------------------      
    
@@ -1315,9 +1593,21 @@ public class RobinsonQuads {
       boolean printQuadsNeeded = false;
 	   boolean printTrianglesNeeded = false;
       boolean outputRCodeNeeded = false;
+      
+      boolean outputARJNeeded = false;
+      boolean outputSkewJNeeded = false;
+
       String fileNameR = null;
+      String fileNameJAR = null;
+      String fileNameJS = null;
+      
+      int verbose = 0;
         
       for ( int i = 0; i < args.length; i++ ) {
+      
+         if ( args[i].equals("-v") ) {
+    		   verbose += 1;
+    	   }
          
 		   if ( args[i].equals("-printt") ) {
 		      printTrianglesNeeded = true; 
@@ -1332,6 +1622,22 @@ public class RobinsonQuads {
         	   if (i == args.length - 3 || fileNameR.substring(0,1).equals("-") || fileNameR.equals(null)){
         		   fileNameR = "rcode";
         	   }            
+         }
+         
+         if ( args[i].equals("-jaspectratio") ) {
+        	    outputARJNeeded = true;
+             fileNameJAR = args[i + 1];
+             if (i == args.length - 3 || fileNameJAR.substring(0,1).equals("-") || fileNameJAR.equals(null)){
+            	 fileNameJAR = "jaspectratio";
+             }    	 
+         }         
+         
+         if ( args[i].equals("-jskew") ) {
+             outputSkewJNeeded = true;
+             fileNameJS = args[i + 1];
+             if (i == args.length - 3 || fileNameJS.substring(0,1).equals("-") || fileNameJS.equals(null)){
+             	fileNameJS = "jskew";
+             }        	 
          }
       }
 	  
@@ -1351,5 +1657,12 @@ public class RobinsonQuads {
       if ( outputRCodeNeeded ) {
          outputRCode(fileNameR);
       }
+      
+      if ( outputARJNeeded ) {
+    	 outputARJ(fileNameJAR, verbose);
+      }   
+      if ( outputSkewJNeeded ) {
+    	 outputSkewJ(fileNameJS, verbose);
+      }   
    }
 }
