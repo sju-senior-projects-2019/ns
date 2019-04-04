@@ -54,6 +54,12 @@ public class RobinsonQuads {
 
    /* Holds the skew values for the Jacobian */
    public static ArrayList<Double> jSkew = new ArrayList<Double>();   
+   
+   /* Holds the X taper values for the Jacobian */
+   public static ArrayList<Double> jtaperX = new ArrayList<Double>();
+   
+   /* Holds the Y taper values for the Jacobian */
+   public static ArrayList<Double> jtaperY = new ArrayList<Double>();   
 	
    /**
     * findVertices - a method to find the vertices for each of the triangles
@@ -302,6 +308,36 @@ public class RobinsonQuads {
       
       return (e[2] / f[2]); // -0.5
    } //End calculateJSkewAngle
+   
+   /**
+    * calculateJTapers - a method to find the Jacobian Tapers in X and Y directions
+    * @param i is the index of the quad
+    * @param p1 is the original coordinates of p1
+    * @param p2 is the original coordinates of p2
+    * @param p3 is the original coordinates of p3
+    * @param p4 is the original coordinates of p4
+    * @return the Jacobian Tapers in X and Y directions (saved in an array)
+    */      
+   public static double[] calculateJTapers( int i, double[] p1, double[] p2, double[] p3, double[] p4 ) {
+      
+      double[] e = new double[4];
+      double[] f = new double[4];
+
+      findEF(p1, p2, p3, p4, e, f);
+      
+      double[] TapersXY = new double[2];
+      
+      assert ( f[2] != 0 || e[1] != 0 );
+            
+      TapersXY[0] = f[3] / f[2]; //Taper in the X direction -0.5
+      TapersXY[1] = e[3] / e[1]; //Taper in the Y direction 0
+      
+      jtaperX.add(i, TapersXY[0]);
+      jtaperY.add(i, TapersXY[1]);
+      
+      return TapersXY;
+        
+   } //End calculateJTapers   
 
    /**
     * findEF - a method to find the values for e1, e2, e3, e4, f1, f2, f3, and f4
@@ -463,7 +499,112 @@ public class RobinsonQuads {
           throw e;
       }   
    } //End outputSkewJ   
-   
+
+   /**
+    * outputTapersXYJ - a method to output the taper values for the Jacobian (MUST TYPE "-jtaper")
+    * @param fileNameJT is the file name 
+    * @param verbose determines the verbose level
+    */
+   public static void outputTapersXYJ(String fileNameJT, int verbose) throws FileNotFoundException {
+	  String tapertext = "";
+	  BigDecimal minx = BigDecimal.valueOf(jtaperX.get(0));
+	  BigDecimal maxx = BigDecimal.valueOf(jtaperX.get(0));
+	  BigDecimal miny = BigDecimal.valueOf(jtaperY.get(0));
+	  BigDecimal maxy = BigDecimal.valueOf(jtaperY.get(0));
+	  int minposx = 1;
+	  int maxposx = 1;
+	  int minposy = 1;
+	  int maxposy = 1;
+	  
+	  if (verbose > 0){
+		  tapertext += "TAPERS FOR JACOBIAN" + System.lineSeparator();
+	  }
+	  for ( int i = 0; i < jtaperX.size(); i++ ) {
+		  tapertext = tapertext + BigDecimal.valueOf(jtaperX.get(i)) + " " + BigDecimal.valueOf(jtaperY.get(i)) + " #" + (i + 1) + ", ";
+		  if ((i + 1) % 3 == 0){
+			  tapertext += "triangle " + ((i + 1) / 3) + System.lineSeparator();
+		  }
+		  else{
+			  tapertext += "triangle " + (((i + 1) / 3) + 1) + System.lineSeparator();
+		  }
+		  if (BigDecimal.valueOf(jtaperX.get(i)).compareTo(maxx) > 0){
+			  maxx = BigDecimal.valueOf(jtaperX.get(i));
+			  maxposx = i + 1;
+		  }
+		  if (BigDecimal.valueOf(jtaperX.get(i)).compareTo(minx) < 0){
+			  minx = BigDecimal.valueOf(jtaperX.get(i));
+			  minposx = i + 1;
+		  }
+		  if (BigDecimal.valueOf(jtaperY.get(i)).compareTo(maxy) > 0){
+			  maxy = BigDecimal.valueOf(jtaperY.get(i));
+			  maxposy = i + 1;
+		  }
+		  if (BigDecimal.valueOf(jtaperY.get(i)).compareTo(miny) < 0){
+			  miny = BigDecimal.valueOf(jtaperY.get(i));
+			  minposy = i + 1;
+		  }
+	  }
+	  
+	  if (verbose > 0) {
+		  tapertext += "#The minimum x value is " + minx + ", which is in quad " + minposx + " {" + findQuadsCoordinates(minposx - 1) + "}, which is in triangle ";
+		  if (minposx % 3 == 0){
+			  tapertext += (minposx / 3) + " {" + findTrianglesCoordinates(minposx / 3) + "}" + System.lineSeparator();
+		  }
+		  else{
+			  tapertext += ((minposx / 3) + 1) + " {" + findTrianglesCoordinates((minposx / 3) + 1) + "}" + System.lineSeparator();
+		  }
+		  tapertext += "#The maximum x value is " + maxx + ", which is in quad " + maxposx + " {" + findQuadsCoordinates(maxposx - 1) + "}, which is in triangle ";
+		  if (maxposx % 3 == 0){
+			  tapertext += (maxposx / 3) + " {" + findTrianglesCoordinates(maxposx / 3) + "}" + System.lineSeparator();
+		  }
+		  else{
+			  tapertext += ((maxposx / 3) + 1) + " {" + findTrianglesCoordinates((maxposx / 3) + 1) + "}" + System.lineSeparator();
+		  }
+		  tapertext += "#The minimum y value is " + miny + ", which is in quad " + minposy + " {" + findQuadsCoordinates(minposy - 1) + "}, which is in triangle ";
+		  if (minposy % 3 == 0){
+			  tapertext += (minposy / 3) + " {" + findTrianglesCoordinates(minposy / 3) + "}" + System.lineSeparator();
+		  }
+		  else{
+			  tapertext += ((minposy / 3) + 1) + " {" + findTrianglesCoordinates((minposy / 3) + 1) + "}" + System.lineSeparator();
+		  }
+		  tapertext += "#The maximum y value is " + maxy + ", which is in quad " + maxposy + " {" + findQuadsCoordinates(maxposy - 1) + "}, which is in triangle ";
+		  if (maxposy % 3 == 0){
+			  tapertext += (maxposy / 3) + " {" + findTrianglesCoordinates(maxposy / 3) + "}" + System.lineSeparator();
+		  }
+		  else{
+			  tapertext += ((maxposy / 3) + 1) + " {" + findTrianglesCoordinates((maxposy / 3) + 1) + "}" + System.lineSeparator();
+		  }
+		  tapertext += "#The mean average for x is " + findMean(jtaperX) + System.lineSeparator();
+		  tapertext += "#The mean average for y is " + findMean(jtaperY) + System.lineSeparator();
+		  
+	  }
+	  
+	  try (PrintWriter out = new PrintWriter(fileNameJT + ".txt")){
+		  out.println(tapertext);
+	  }
+      catch (FileNotFoundException e) { //Checks for file not found exception
+          System.err.println("Problem creating files");
+          System.err.println(e.getMessage()); 
+          throw e;
+      }   
+   } //End outputTapersXYJ
+
+   /**
+    * printJacobian - a method to call other methods in order to print the AR, Skew Angle, and Tapers for the Jacobian
+    * @param i is the index of the quad
+    * @param p1 is the original coordinates of p1
+    * @param p2 is the original coordinates of p2
+    * @param p3 is the original coordinates of p3
+    * @param p4 is the original coordinates of p4
+    */
+   public static void printJacobian( int i, double[] p1, double[] p2, double[] p3, double[] p4) {
+         
+      double JAR = calculateJAR( i, p1, p2, p3, p4 );
+      double JSkewAngle = calculateJSkewAngle( i, p1, p2, p3, p4 );
+      double[] TapersXY = calculateJTapers( i, p1, p2, p3, p4 );
+
+      System.out.println("Triangle " + ((i/3)+1) + ", Quad " + i + " || Aspect Ratio: " + JAR + " /// Skew Angle: " + JSkewAngle + " /// X Taper : " + TapersXY[0] + " /// Y Taper : " + TapersXY[1]);
+   } //End printJacobian   
 
    // ----------------------------------------------------------------------------------------------
    // BEGINNING OF SETTING ORDER
@@ -1366,7 +1507,7 @@ public class RobinsonQuads {
 	   double[] p3 = {QuadsX.get(i)[2], QuadsY.get(i)[2]};
 	   double[] p4 = {QuadsX.get(i)[3], QuadsY.get(i)[3]};
 	  
-	  
+	   /**
 	   System.out.println("Center: " + ((p1[0] + p2[0] + p3[0] + p4[0]) / 4) + " " + ((p1[1] + p2[1] + p3[1] + p4[1]) / 4));
 	   System.out.println("Before order");
 	   System.out.println("Quad " + (i + 1));
@@ -1374,6 +1515,7 @@ public class RobinsonQuads {
 	   System.out.println(p2[0] + " " + p2[1]);
 	   System.out.println(p3[0] + " " + p3[1]);
 	   System.out.println(p4[0] + " " + p4[1]);	    
+      */
       
       ArrayList<double[]> newCoords = putInOrder(i, p1, p2, p3, p4); 
       p1 = newCoords.get(0);
@@ -1381,6 +1523,7 @@ public class RobinsonQuads {
       p3 = newCoords.get(2);
       p4 = newCoords.get(3);
       
+      /**
       System.out.println("After order");
       System.out.println("Quad " + (i + 1));
 	   System.out.println(p1[0] + " " + p1[1]);
@@ -1388,9 +1531,11 @@ public class RobinsonQuads {
 	   System.out.println(p3[0] + " " + p3[1]);
 	   System.out.println(p4[0] + " " + p4[1]);
 	   System.out.println();   
+      */
       
       calculateJAR( i, p1, p2, p3, p4 );
 	   calculateJSkewAngle( i, p1, p2, p3, p4 );
+      calculateJTapers( i, p1, p2, p3, p4 );
 
    } //End of setCalculations
    
@@ -1432,7 +1577,7 @@ public class RobinsonQuads {
       System.out.println("QUADS");
       System.out.println("----------------------------------------------------------------------------------------------"); 
       for ( int i = 0; i < QuadsX.size(); i++ ) {     
-         System.out.println("Triangle " + ((i/3) + 1) + " Quad " + ((i%3) + 1) );
+       System.out.println("Triangle " + ((i/3) + 1) + " Quad " + ((i%3) + 1) );
 		 System.out.println("P1: " + QuadsX.get(i)[0] + " " + QuadsY.get(i)[0]);
 		 System.out.println("P2: " + QuadsX.get(i)[1] + " " + QuadsY.get(i)[1]);
 		 System.out.println("P3: " + QuadsX.get(i)[2] + " " + QuadsY.get(i)[2]);
@@ -1578,6 +1723,23 @@ public class RobinsonQuads {
 	   return mean / values.size();
    } //End findMean
    
+   /**
+    * printUsage - a method to print the command prompt commands for this program (MUST TYPE \?)
+    */
+   public static void printUsage( ) {
+      System.out.println("----------------------------------------------------------------------------------------------"); 
+      System.out.println("USAGE");
+      System.out.println("----------------------------------------------------------------------------------------------"); 
+      System.out.println("-? = displays the usage menu");
+      System.out.println("-printt = prints the points of the triangles");
+      System.out.println("-printq = prints the points of the quads");
+      System.out.println("-jaspectratio = outputs the aspect ratio values for the Jacobian into a .txt file");
+      System.out.println("-jskew = outputs the skew values for the Jacobian into a .txt file");
+      System.out.println("-jtaper = outputs the taper values for the Jacobian into a .txt file");
+      System.out.println("-r = outputs the R Code for displaying the quads and triangles into a .txt file");
+      System.out.println("-j = displays the jacobian calculations for AR, Skew Angles, and Tapers in X and Y directions");
+   } //End printUsage   
+   
    // ----------------------------------------------------------------------------------------------
    // MAIN METHOD
    // ----------------------------------------------------------------------------------------------      
@@ -1590,16 +1752,22 @@ public class RobinsonQuads {
 
       //Command Methods
       
-      boolean printQuadsNeeded = false;
+      boolean printUsageNeeded = false;
+      
 	   boolean printTrianglesNeeded = false;
+      boolean printQuadsNeeded = false;
       boolean outputRCodeNeeded = false;
       
       boolean outputARJNeeded = false;
       boolean outputSkewJNeeded = false;
+      boolean outputTaperJNeeded = false;
 
       String fileNameR = null;
       String fileNameJAR = null;
       String fileNameJS = null;
+      String fileNameJT = null;
+      
+      boolean printJacobianNeeded = false;
       
       int verbose = 0;
         
@@ -1608,6 +1776,10 @@ public class RobinsonQuads {
          if ( args[i].equals("-v") ) {
     		   verbose += 1;
     	   }
+         
+         if ( args[i].equals("-?") ) {
+             printUsageNeeded = true;
+         }     
          
 		   if ( args[i].equals("-printt") ) {
 		      printTrianglesNeeded = true; 
@@ -1631,7 +1803,6 @@ public class RobinsonQuads {
             	 fileNameJAR = "jaspectratio";
              }    	 
          }         
-         
          if ( args[i].equals("-jskew") ) {
              outputSkewJNeeded = true;
              fileNameJS = args[i + 1];
@@ -1639,6 +1810,18 @@ public class RobinsonQuads {
              	fileNameJS = "jskew";
              }        	 
          }
+         if ( args[i].equals("-jtaper") ) {
+        	 outputTaperJNeeded = true;
+        	
+             fileNameJT = args[i + 1];
+             if (i == args.length - 3 || fileNameJT.substring(0,1).equals("-") || fileNameJT.equals(null)){
+             	fileNameJT = "jtaper";
+             }      	 
+         }         
+         if ( args[i].equals("-j") ) {
+            printJacobianNeeded = true;    
+         }                  
+         
       }
 	  
       triangle = findTriangles(args); //Holds the triangles
@@ -1646,6 +1829,11 @@ public class RobinsonQuads {
       setQuads(); //Sets the values for the quads            
       for(int i = 0; i < QuadsX.size(); i++){
     	   setCalculations(i); //Sets the values for the calculations
+      }
+
+      if ( printUsageNeeded ) {
+          printUsage();
+          System.exit(0);
       }
 
       if ( printTrianglesNeeded ) {
@@ -1663,6 +1851,23 @@ public class RobinsonQuads {
       }   
       if ( outputSkewJNeeded ) {
     	 outputSkewJ(fileNameJS, verbose);
+      }
+      if ( outputTaperJNeeded ) {
+    	 outputTapersXYJ(fileNameJT, verbose);
       }   
+      
+      if ( printJacobianNeeded ) {
+         System.out.println("----------------------------------------------------------------------------------------------");      
+         System.out.println("JACOBIAN METHODS");
+         System.out.println("----------------------------------------------------------------------------------------------");      
+         for ( int j = 0; j < QuadsX.size(); j++ ) {
+       	  	double[] p1 = {QuadsX.get(j)[0], QuadsY.get(j)[0]};
+       	  	double[] p2 = {QuadsX.get(j)[1], QuadsY.get(j)[1]};
+       	  	double[] p3 = {QuadsX.get(j)[2], QuadsY.get(j)[2]};
+       	  	double[] p4 = {QuadsX.get(j)[3], QuadsY.get(j)[3]};
+            printJacobian(j, p1, p2, p3, p4);           
+         }
+      }      
+      
    }
 }
