@@ -52,8 +52,14 @@ public class RobinsonQuads {
    /* Holds the aspect ratio values for the Jacobian */
    public static ArrayList<Double> jAspectRatio = new ArrayList<Double>();
 
+   /* Holds the aspect ratio values for the Shape Parameters */
+   public static ArrayList<Double> spAspectRatio = new ArrayList<Double>();
+   
    /* Holds the skew values for the Jacobian */
    public static ArrayList<Double> jSkew = new ArrayList<Double>();   
+   
+   /* Holds the skew values for the Shape Parameters */
+   public static ArrayList<Double> spSkew = new ArrayList<Double>();   
    
    /* Holds the X taper values for the Jacobian */
    public static ArrayList<Double> jtaperX = new ArrayList<Double>();
@@ -430,13 +436,13 @@ public class RobinsonQuads {
 	  }
 	  
 	  try (PrintWriter out = new PrintWriter(fileNameJAR + ".txt")){
-		  out.println(artext);
+		   out.println(artext);
 	  }
-      catch (FileNotFoundException e) { //Checks for file not found exception
-          System.err.println("Problem creating files");
-          System.err.println(e.getMessage()); 
-          throw e;
-      }   
+     catch (FileNotFoundException e) { //Checks for file not found exception
+         System.err.println("Problem creating files");
+         System.err.println(e.getMessage()); 
+         throw e;
+     }   
    } //End outputARJ        
    
    /**
@@ -493,11 +499,11 @@ public class RobinsonQuads {
 	  try (PrintWriter out = new PrintWriter(fileNameJS + ".txt")){
 		  out.println(skewtext);
 	  }
-      catch (FileNotFoundException e) { //Checks for file not found exception
-          System.err.println("Problem creating files");
-          System.err.println(e.getMessage()); 
-          throw e;
-      }   
+     catch (FileNotFoundException e) { //Checks for file not found exception
+        System.err.println("Problem creating files");
+        System.err.println(e.getMessage()); 
+        throw e;
+     }   
    } //End outputSkewJ   
 
    /**
@@ -580,13 +586,13 @@ public class RobinsonQuads {
 	  }
 	  
 	  try (PrintWriter out = new PrintWriter(fileNameJT + ".txt")){
-		  out.println(tapertext);
+		   out.println(tapertext);
 	  }
-      catch (FileNotFoundException e) { //Checks for file not found exception
-          System.err.println("Problem creating files");
-          System.err.println(e.getMessage()); 
-          throw e;
-      }   
+     catch (FileNotFoundException e) { //Checks for file not found exception
+         System.err.println("Problem creating files");
+         System.err.println(e.getMessage()); 
+         throw e;
+     }   
    } //End outputTapersXYJ
 
    /**
@@ -605,6 +611,329 @@ public class RobinsonQuads {
 
       System.out.println("Triangle " + ((i/3)+1) + ", Quad " + i + " || Aspect Ratio: " + JAR + " /// Skew Angle: " + JSkewAngle + " /// X Taper : " + TapersXY[0] + " /// Y Taper : " + TapersXY[1]);
    } //End printJacobian   
+
+   // ----------------------------------------------------------------------------------------------
+   // BEGINNING OF SHAPE PARAMETERS FOR A QUAD METHODS
+   // ----------------------------------------------------------------------------------------------   
+   
+   /**
+    * calculateARa - a method to calculate and return Aspect Ratio A
+    * @param i is the index of the quad
+    * @param p1 is the original coordinates of p1
+    * @param p2 is the original coordinates of p2
+    * @param p3 is the original coordinates of p3
+    * @param p4 is the original coordinates of p4
+    * @return the Aspect Ratio A
+    */
+   public static double calculateARa( int i, double[] p1, double[] p2, double[] p3, double[] p4 ) {
+      
+      // 1, -2 / 1.5, -.5 / 1, 0 / .5, -.5
+         
+      double[] mp12 = { (( p1[0] + p2[0] ) / 2) , (( p1[1] + p2[1] ) / 2) }; // 1.25, -1.25
+      double[] mp23 = { (( p2[0] + p3[0] ) / 2) , (( p2[1] + p3[1] ) / 2) }; // 1.25, -0.25 
+      double[] mp34 = { (( p3[0] + p4[0] ) / 2) , (( p3[1] + p4[1] ) / 2) }; // 0.75, -0.25
+      double[] mp41 = { (( p4[0] + p1[0] ) / 2) , (( p4[1] + p1[1] ) / 2) }; // 0.75, -1.25
+      
+      assert ( (mp34[0] - mp12[0]) != 0 );
+               
+      double slope1234 = ( mp34[1] - mp12[1] ) / ( mp34[0] - mp12[0] ); // 1 / -.5 = -2
+      double b1 = mp34[1] - ( slope1234 * mp34[0] ); // -.25 - (-1.5) = 1.25
+      
+      assert ( (mp41[0] - mp23[0]) != 0 ); 
+               
+      double slope2341 = ( mp41[1] - mp23[1] ) / ( mp41[0] - mp23[0] ); // -1 / -0.5 = 2
+      double b2 = mp41[1] - ( slope2341 * mp41[0] ); // -1.25 - 1.5 = -2.75
+
+      assert ( (slope2341 - slope1234) != 0 ); 
+               
+      double xint = ( b1 - b2 ) / ( slope2341 - slope1234 ); // 4 / 4 = 1
+      double yint = ( slope1234 * xint ) + b1; // -0.75
+         
+      double qpTemp1 = ( mp23[0] - xint ) * ( mp23[0] - xint ); // 0.0625
+      double qpTemp2 = ( mp23[1] - yint ) * ( mp23[1] - yint ); // 0.25
+      
+      assert ( (qpTemp1 + qpTemp2) >= 0 );
+            
+      double h1 = Math.sqrt( qpTemp1 + qpTemp2 ); // 0.55901699
+         
+      //mp34 and line mp41 and mp23
+      
+      double num1 = ( mp23[1] - mp41[1] ) * mp34[0]; // 0.75
+      double num2 = ( mp23[0] - mp41[0] ) * mp34[1]; // -0.125
+      double numerator = Math.abs( num1 - num2 + (mp23[0] * mp41[1]) - (mp23[1] * mp41[0]) ); // 0.875 - 1.5625 + 0.1875 = 0.5
+      double den1 = ( mp23[1] - mp41[1] ) * ( mp23[1] - mp41[1] ); // 1
+      double den2 = ( mp23[0] - mp41[0] ) * ( mp23[0] - mp41[0] ); // 0.25
+      double denominator = Math.sqrt( den1 + den2 ); // 1.1180339887
+      
+      assert ( denominator != 0 );
+
+      double h2 = ( numerator / denominator ); // 0.44721359
+         
+      double ARa = Math.max( ( h1/h2 ) , ( h2/h1 ) ); // 1.25
+      return ARa;
+   } //End calculateARa
+   
+   /**
+    * calculateARb - a method to calculate and return Aspect Ratio B
+    * @param i is the index of the quad
+    * @param p1 is the original coordinates of p1
+    * @param p2 is the original coordinates of p2
+    * @param p3 is the original coordinates of p3
+    * @param p4 is the original coordinates of p4
+    * @return the Aspect Ratio B
+    */
+   public static double calculateARb( int i, double[] p1, double[] p2, double[] p3, double[] p4 ) { 
+         
+      double[] mp12 = { (( p1[0] + p2[0] ) / 2) , (( p1[1] + p2[1] ) / 2) }; // 1.25, -1.25
+      double[] mp23 = { (( p2[0] + p3[0] ) / 2) , (( p2[1] + p3[1] ) / 2) }; // 1.25, -0.25 
+      double[] mp34 = { (( p3[0] + p4[0] ) / 2) , (( p3[1] + p4[1] ) / 2) }; // 0.75, -0.25
+      double[] mp41 = { (( p4[0] + p1[0] ) / 2) , (( p4[1] + p1[1] ) / 2) }; // 0.75, -1.25
+      
+      assert ( (mp34[0] - mp12[0]) != 0 );
+               
+      double slope1234 = ( mp34[1] - mp12[1] ) / ( mp34[0] - mp12[0] ); // 1 / -0.5 = -2
+      double b1 = mp34[1] - ( slope1234 * mp34[0] ); // -0.25 - (-2 * 0.75) = -0.25 + 1.5 = 1.25
+      
+      assert ( (mp41[0] - mp23[0]) != 0 );      
+         
+      double slope2341 = ( mp41[1] - mp23[1] ) / ( mp41[0] - mp23[0] ); // -1 / -0.5 = 2
+      double b2 = mp41[1] - ( slope2341 * mp41[0] ); // -1.25 - 1.5 = -2.75
+      
+      assert ( (slope2341 - slope1234) != 0 ); 
+         
+      double xint = ( b1 - b2 ) / ( slope2341 - slope1234 ); // 4 / 4 = 1
+      double yint = ( slope1234 * xint ) + b1; // -0.75
+         
+      double qpTemp1 = ( mp34[0] - xint ) * ( mp34[0] - xint ); // 0.0625
+      double qpTemp2 = ( mp34[1] - yint ) * ( mp34[1] - yint ); // 0.25
+      
+      assert ( (qpTemp1 + qpTemp2) >= 0 );
+            
+      double h1 = Math.sqrt( qpTemp1 + qpTemp2 ); // 0.559016994
+
+      double num1 = ( mp34[1] - mp12[1] ) * mp41[0]; // 1 * 0.75 = 0.75
+      double num2 = ( mp34[0] - mp12[0] ) * mp41[1]; // -0.5 * -1.25 = 0.625
+      double numerator = Math.abs( num1 - num2 + (mp34[0] * mp12[1]) - (mp34[1] * mp12[0]) ); // 0.125 + -0.9375 + 0.3125 = 0.5
+      double den1 = ( mp34[1] - mp12[1] ) * ( mp34[1] - mp12[1] ); // 1 * 1 = 1
+      double den2 = ( mp34[0] - mp12[0] ) * ( mp34[0] - mp12[0] ); // 0.25
+      
+      assert ( (den1 + den2) >= 0 );
+           
+      double denominator = Math.sqrt( den1 + den2 ); //1.118033988
+      
+      assert ( (denominator) >= 0 );
+            
+      double h2 = ( numerator / denominator ); //0.4472136
+         
+      double ARb = Math.max( ( h1/h2 ) , ( h2/h1 ) );
+      return ARb;
+   } //End calculateARb
+   
+   /**
+    * calculateAR - a method to take both ARa and ARb and calculate the correct Aspect Ratio
+    * @param i is the index of the quad
+    * @param p1 is the original coordinates of p1
+    * @param p2 is the original coordinates of p2
+    * @param p3 is the original coordinates of p3
+    * @param p4 is the original coordinates of p4
+    * @return the Aspect Ratio
+    */
+   public static double calculateAR( int i, double[] p1, double[] p2, double[] p3, double[] p4 ) {
+      
+      double ARa = calculateARa(i, p1, p2, p3, p4);
+      double ARb = calculateARb(i, p1, p2, p3, p4);
+      
+      spAspectRatio.add(i, Math.max(ARa, ARb));
+      
+      return Math.max( ARa, ARb );
+   } //End calculateAR
+   
+   /**
+    * calculateSkewAngle - a method to calculate the Skew Angle
+    * @param i is the index of the quad
+    * @param p1 is the original coordinates of p1
+    * @param p2 is the original coordinates of p2
+    * @param p3 is the original coordinates of p3
+    * @param p4 is the original coordinates of p4
+    * @return the Skew Angle
+    */
+   public static double calculateSkewAngle( int i, double[] p1, double[] p2, double[] p3, double[] p4 ) {
+         
+      double[] mp12 = { (( p1[0] + p2[0] ) / 2) , (( p1[1] + p2[1] ) / 2) }; // 1.25, -1.25
+      double[] mp23 = { (( p2[0] + p3[0] ) / 2) , (( p2[1] + p3[1] ) / 2) }; // 1.25, -0.25 
+      double[] mp34 = { (( p3[0] + p4[0] ) / 2) , (( p3[1] + p4[1] ) / 2) }; // 0.75, -0.25
+      double[] mp41 = { (( p4[0] + p1[0] ) / 2) , (( p4[1] + p1[1] ) / 2) }; // 0.75, -1.25
+      
+      assert ( (mp34[0] - mp12[0]) != 0 );
+               
+      double slope1234 = ( mp34[1] - mp12[1] ) / ( mp34[0] - mp12[0] ); // 1 / -0.5 = -2
+      double b1 = mp34[1] - ( slope1234 * mp34[0] ); // -0.25 - (-2 * 0.75) = -0.25 + 1.5 = 1.25
+      
+      assert ( (mp41[0] - mp23[0]) != 0 );      
+         
+      double slope2341 = ( mp41[1] - mp23[1] ) / ( mp41[0] - mp23[0] ); // -1 / -0.5 = 2
+      double b2 = mp41[1] - ( slope2341 * mp41[0] ); // -1.25 - 1.5 = -2.75
+      
+      assert ( (slope2341 - slope1234) != 0 ); 
+         
+      double xint = ( b1 - b2 ) / ( slope2341 - slope1234 ); // 4 / 4 = 1
+      double yint = ( slope1234 * xint ) + b1; // -0.75  
+
+      double mp23vx = mp23[0] - xint; // 0.25
+      double mp23vy = mp23[1] - yint; // 0.5
+      
+      double mp34vx = mp34[0] - xint; // -0.25
+      double mp34vy = mp34[1] - yint; // 0.5
+      
+      double dotProduct = ( mp23vx * mp34vx ) + ( mp23vy * mp34vy ); // -0.0625 + 0.25 = 1.875
+      
+      spSkew.add(i, Math.acos(dotProduct));
+      
+      return Math.acos( dotProduct ); // 79.19307713 IN RADIANS , 1.3821799406194926 IN DEGREES
+   } //End calculateSkewAngle
+
+   /**
+    * outputARSP - a method to output the aspect ratio values for the Shape Parameters (MUST TYPE "-spaspectratio")
+    * @param fileNameSPAR is the file name
+    * @param verbose determines the verbose level
+    * TODO fix NaN
+    */
+   public static void outputARSP(String fileNameSPAR, int verbose) throws FileNotFoundException {
+	  String artext = "";
+	  BigDecimal min = BigDecimal.valueOf(spAspectRatio.get(0));
+	  BigDecimal max = BigDecimal.valueOf(spAspectRatio.get(0));
+	  int minpos = 1;
+	  int maxpos = 1;
+	  if (verbose > 0){
+		  artext += "ASPECT RATIOS FOR SHAPE PARAMETERS" + System.lineSeparator();
+	  }
+	  for ( int i = 0; i < spAspectRatio.size(); i++ ) {
+		  if(Double.isInfinite(spAspectRatio.get(i))){
+			  artext = artext + BigDecimal.valueOf(2147483647) + " #" + (i + 1) + ", ";
+		  }
+		  else{
+			  //System.out.println((i + 1) + " " + spAspectRatio.get(i));
+			  artext = artext + BigDecimal.valueOf(spAspectRatio.get(i)) + " #" + (i + 1) + ", ";
+		  }
+		  if ((i + 1) % 3 == 0){
+			  artext += "triangle " + ((i + 1) / 3) + System.lineSeparator();
+		  }
+		  else{
+			  artext += "triangle " + (((i + 1) / 3) + 1) + System.lineSeparator();
+		  }
+		  
+		  if(Double.isInfinite(spAspectRatio.get(i))){
+			  if (BigDecimal.valueOf(2147483647).compareTo(max) > 0){
+				  max = BigDecimal.valueOf(2147483647);
+				  maxpos = i + 1;
+			  }
+			  if (BigDecimal.valueOf(2147483647).compareTo(min) < 0){
+				  min = BigDecimal.valueOf(2147483647);
+				  minpos = i + 1;
+			  }  
+		  }
+		  else{
+			  if (BigDecimal.valueOf(spAspectRatio.get(i)).compareTo(max) > 0){
+				  max = BigDecimal.valueOf(spAspectRatio.get(i));
+				  maxpos = i + 1;
+			  }
+			  if (BigDecimal.valueOf(spAspectRatio.get(i)).compareTo(min) < 0){
+				  min = BigDecimal.valueOf(spAspectRatio.get(i));
+				  minpos = i + 1;
+			  }  
+		  }
+	  }
+	  
+	  if (verbose > 0) {
+		  artext += "#The minimum value is " + min + ", which is in quad " + minpos + " {" + findQuadsCoordinates(minpos - 1) + "}, which is in triangle ";
+		  if (minpos % 3 == 0){
+			  artext += (minpos / 3) + " {" + findTrianglesCoordinates(minpos / 3) + "}" + System.lineSeparator();
+		  }
+		  else{
+			  artext += ((minpos / 3) + 1) + " {" + findTrianglesCoordinates((minpos / 3) + 1) + "}" + System.lineSeparator();
+		  }
+		  artext += "#The maximum value is " + max + ", which is in quad " + maxpos + " {" + findQuadsCoordinates(maxpos - 1) + "}, which is in triangle ";
+		  if (maxpos % 3 == 0){
+			  artext += (maxpos / 3) + " {" + findTrianglesCoordinates(maxpos / 3) + "}" + System.lineSeparator();
+		  }
+		  else{
+			  artext += ((maxpos / 3) + 1) + " {" + findTrianglesCoordinates((maxpos / 3) + 1) + "}" + System.lineSeparator();
+		  }
+		  artext += "#The mean average is " + findMean(spAspectRatio) + System.lineSeparator();
+		  
+	  }
+	  
+	  try (PrintWriter out = new PrintWriter(fileNameSPAR + ".txt")){
+		   out.println(artext);
+	  }
+     catch (FileNotFoundException e) { //Checks for file not found exception
+         System.err.println("Problem creating files");
+         System.err.println(e.getMessage()); 
+         throw e;
+      }   
+   } //End outputARSP
+
+   /**
+    * outputSkewSP - a method to output the skew values for the Shape Parameters (MUST TYPE "-spskew")
+    * @param fileNameSPS is the file name 
+    * @param verbose determines the verbose level
+    */
+   public static void outputSkewSP(String fileNameSPS, int verbose) throws FileNotFoundException {
+	  String skewtext = "";
+	  BigDecimal min = BigDecimal.valueOf(spSkew.get(0));
+	  BigDecimal max = BigDecimal.valueOf(spSkew.get(0));
+	  int minpos = 1;
+	  int maxpos = 1;
+	  if (verbose > 0){
+		  skewtext += "SKEWS FOR SHAPE PARAMETERS" + System.lineSeparator();
+	  }
+	  for ( int i = 0; i < spSkew.size(); i++ ) {
+		  skewtext = skewtext + BigDecimal.valueOf(spSkew.get(i)) + " #" + (i + 1) + ", ";
+		  if ((i + 1) % 3 == 0){
+			  skewtext += "triangle " + ((i + 1) / 3) + System.lineSeparator();
+		  }
+		  else{
+			  skewtext += "triangle " + (((i + 1) / 3) + 1) + System.lineSeparator();
+		  }
+		  if (BigDecimal.valueOf(spSkew.get(i)).compareTo(max) > 0){
+			  max = BigDecimal.valueOf(spSkew.get(i));
+			  maxpos = i + 1;
+		  }
+		  if (BigDecimal.valueOf(spSkew.get(i)).compareTo(min) < 0){
+			  min = BigDecimal.valueOf(spSkew.get(i));
+			  minpos = i + 1;
+		  }
+	  }
+	  
+	  if (verbose > 0) {
+		  skewtext += "#The minimum value is " + min + ", which is in quad " + minpos + " {" + findQuadsCoordinates(minpos - 1) + "}, which is in triangle ";
+		  if (minpos % 3 == 0){
+			  skewtext += (minpos / 3) + " {" + findTrianglesCoordinates(minpos / 3) + "}" + System.lineSeparator();
+		  }
+		  else{
+			  skewtext += ((minpos / 3) + 1) + " {" + findTrianglesCoordinates((minpos / 3) + 1) + "}" + System.lineSeparator();
+		  }
+		  skewtext += "#The maximum value is " + max + ", which is in quad " + maxpos + " {" + findQuadsCoordinates(maxpos - 1) + "}, which is in triangle ";
+		  if (maxpos % 3 == 0){
+			  skewtext += (maxpos / 3) + " {" + findTrianglesCoordinates(maxpos / 3) + "}" + System.lineSeparator();
+		  }
+		  else{
+			  skewtext += ((maxpos / 3) + 1) + " {" + findTrianglesCoordinates((maxpos / 3) + 1) + "}" + System.lineSeparator();
+		  }
+		  skewtext += "#The mean average is " + findMean(spSkew) + System.lineSeparator();
+
+		  
+	  }
+	  
+	  try (PrintWriter out = new PrintWriter(fileNameSPS + ".txt")){
+		   out.println(skewtext);
+	  }
+     catch (FileNotFoundException e) { //Checks for file not found exception
+         System.err.println("Problem creating files");
+         System.err.println(e.getMessage()); 
+         throw e;
+     }   
+   } //End outputSkewSP 
 
    // ----------------------------------------------------------------------------------------------
    // BEGINNING OF SETTING ORDER
@@ -1536,6 +1865,9 @@ public class RobinsonQuads {
       calculateJAR( i, p1, p2, p3, p4 );
 	   calculateJSkewAngle( i, p1, p2, p3, p4 );
       calculateJTapers( i, p1, p2, p3, p4 );
+      
+      calculateAR( i, p1, p2, p3, p4 );
+	   calculateSkewAngle( i, p1, p2, p3, p4 );
 
    } //End of setCalculations
    
@@ -1736,6 +2068,8 @@ public class RobinsonQuads {
       System.out.println("-jaspectratio = outputs the aspect ratio values for the Jacobian into a .txt file");
       System.out.println("-jskew = outputs the skew values for the Jacobian into a .txt file");
       System.out.println("-jtaper = outputs the taper values for the Jacobian into a .txt file");
+      System.out.println("-spaspectratio = outputs the aspect ratio values for the Shape Parameters into a .txt file");      
+      System.out.println("-spskew = outputs the skew values for the Shape Parameters into a .txt file");
       System.out.println("-r = outputs the R Code for displaying the quads and triangles into a .txt file");
       System.out.println("-j = displays the jacobian calculations for AR, Skew Angles, and Tapers in X and Y directions");
    } //End printUsage   
@@ -1761,11 +2095,18 @@ public class RobinsonQuads {
       boolean outputARJNeeded = false;
       boolean outputSkewJNeeded = false;
       boolean outputTaperJNeeded = false;
+      
+      boolean outputARSPNeeded = false;      
+      boolean outputSkewSPNeeded = false;
 
       String fileNameR = null;
+      
       String fileNameJAR = null;
       String fileNameJS = null;
       String fileNameJT = null;
+      
+      String fileNameSPAR = null;
+      String fileNameSPS = null;
       
       boolean printJacobianNeeded = false;
       
@@ -1820,7 +2161,25 @@ public class RobinsonQuads {
          }         
          if ( args[i].equals("-j") ) {
             printJacobianNeeded = true;    
-         }                  
+         }              
+         
+         
+         if ( args[i].equals("-spaspectratio") ) {
+        	 outputARSPNeeded = true;
+        	 
+             fileNameSPAR = args[i + 1];
+             if (i == args.length - 3 || fileNameSPAR.substring(0,1).equals("-") || fileNameSPAR.equals(null)){
+             	fileNameSPAR = "spaspectratio";
+             }
+         }         
+         if ( args[i].equals("-spskew") ) {
+        	 outputSkewSPNeeded = true;
+        	 
+             fileNameSPS = args[i + 1];
+             if (i == args.length - 3 || fileNameSPS.substring(0,1).equals("-") || fileNameSPS.equals(null)){
+             	fileNameSPS = "spskew";
+             }	 
+         }             
          
       }
 	  
@@ -1867,7 +2226,14 @@ public class RobinsonQuads {
        	  	double[] p4 = {QuadsX.get(j)[3], QuadsY.get(j)[3]};
             printJacobian(j, p1, p2, p3, p4);           
          }
+      }   
+      
+      if ( outputARSPNeeded ) {
+    	 outputARSP(fileNameSPAR, verbose);
       }      
+      if ( outputSkewSPNeeded ) {
+    	 outputSkewSP(fileNameSPS, verbose); 
+      }         
       
    }
 }
