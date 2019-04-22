@@ -1,7 +1,7 @@
 /**
  * ReadTriangle reads in points from a triangle file
  * @author Nicholas Senatore
- * @since 4/1/2019
+ * @since 4/21/2019
  */
 
 import java.io.*;
@@ -66,6 +66,12 @@ public class RobinsonQuads {
    
    /* Holds the Y taper values for the Jacobian */
    public static ArrayList<Double> jtaperY = new ArrayList<Double>();   
+   
+   /* Holds the X taper values for the Shape Parameters */
+   public static ArrayList<Double> sptaperX = new ArrayList<Double>();
+   
+   /* Holds the Y taper values for the Shape Parameters */
+   public static ArrayList<Double> sptaperY = new ArrayList<Double>();   
 	
    /**
     * findVertices - a method to find the vertices for each of the triangles
@@ -609,7 +615,7 @@ public class RobinsonQuads {
       double JSkewAngle = calculateJSkewAngle( i, p1, p2, p3, p4 );
       double[] TapersXY = calculateJTapers( i, p1, p2, p3, p4 );
 
-      System.out.println("Triangle " + ((i/3)+1) + ", Quad " + i + " || Aspect Ratio: " + JAR + " /// Skew Angle: " + JSkewAngle + " /// X Taper : " + TapersXY[0] + " /// Y Taper : " + TapersXY[1]);
+      System.out.println("Triangle " + ((i/3)+1) + ", Quad " + (i+1) + " || Aspect Ratio: " + JAR + " /// Skew Angle: " + JSkewAngle + " /// X Taper : " + TapersXY[0] + " /// Y Taper : " + TapersXY[1]);
    } //End printJacobian   
 
    // ----------------------------------------------------------------------------------------------
@@ -791,6 +797,94 @@ public class RobinsonQuads {
       
       return Math.acos( dotProduct ); // 79.19307713 IN RADIANS , 1.3821799406194926 IN DEGREES
    } //End calculateSkewAngle
+   
+   /**
+    * calculateTapers - a method to calculate the Tapers
+    * @param i is the index of the quad
+    * @param p1 is the original coordinates of p1
+    * @param p2 is the original coordinates of p2
+    * @param p3 is the original coordinates of p3
+    * @param p4 is the original coordinates of p4
+    * @return the Tapers
+    */
+   public static double[] calculateTapers( int i, double[] p1, double[] p2, double[] p3, double[] p4 ) {
+            
+      // 1, -2 / 1.5, -.5 / 1, 0 / .5, -.5
+         
+      double[] mp12 = { (( p1[0] + p2[0] ) / 2) , (( p1[1] + p2[1] ) / 2) }; // .3058, -.772
+      double[] mp23 = { (( p2[0] + p3[0] ) / 2) , (( p2[1] + p3[1] ) / 2) }; // .3304, -.769
+      double[] mp34 = { (( p3[0] + p4[0] ) / 2) , (( p3[1] + p4[1] ) / 2) }; // .3087, -.7675
+      double[] mp41 = { (( p4[0] + p1[0] ) / 2) , (( p4[1] + p1[1] ) / 2) }; // .2841, -.7705
+      
+      if ( (mp34[0] - mp12[0]) == 0 ) {
+           System.out.print("Line is vertical, slope is infinity : ");
+           double[] tapers = {-9999, -9999};
+           sptaperX.add(i, tapers[0]);
+           sptaperY.add(i, tapers[1]);
+           return tapers;
+      }
+      
+      double slope1234 = ( mp34[1] - mp12[1] ) / ( mp34[0] - mp12[0] ); // 1.5517
+      
+      if ( (mp23[0] - mp41[0]) == 0 ) {
+           System.out.print("Line is vertical, slope is infinity : ");
+           double[] tapers = {-9999, -9999};
+           sptaperX.add(i, tapers[0]);
+           sptaperY.add(i, tapers[1]);
+           return tapers;
+      }
+      
+      double slope4123 = ( mp23[1] - mp41[1] ) / ( mp23[0] - mp41[0] ); // .03239
+      //y = slope4123 ( x - p3[0] ) + p3[1];
+      
+      if ( slope4123 == slope1234 ) {    
+           System.out.print("Lines are parallel, no intersection : ");
+           double[] tapers = {-9999, -9999};
+           sptaperX.add(i, tapers[0]);
+           sptaperY.add(i, tapers[1]);
+           return tapers;
+      }
+      
+      //slope4123 * ( x - p3[0] ) + p3[1] = slope1234 * ( x - mp23[0] ) + mp23[1]
+      //slope4123x + ( -1 * slope4123 * p3[0] ) + p3[1] = slope1234x + ( -1 * slope1234 * mp23[0] ) + mp23[1]         
+      
+      double newXNum = ( ( -1 * slope1234 * mp23[0] ) + mp23[1] ) - ( ( -1 * slope4123 * p3[0] ) + p3[1] ); // -1.282 - -.7769 = -.5051
+      
+      assert ( (slope4123 - slope1234) != 0 );
+      
+      double newX = newXNum / (slope4123 - slope1234); // .3324
+      double newY = slope4123 * ( newX - p3[0] ) + p3[1]; // -.793
+      double[] pt1 = {newX, newY}; // .3324, -.793
+      
+      double T1temp = ( ( pt1[0] - p3[0] ) * ( pt1[0] - p3[0] ) ) + ( ( pt1[1] - p3[1] ) * ( pt1[1] - p3[1] ) ); // 0.00074356
+      
+      assert ( T1temp >= 0 );
+      
+      double T1 = Math.sqrt(T1temp); //0.027268
+      
+      //y = slope4123 ( x - mp34[0] ) + mp34[1];
+      
+      //slope4123 * ( x - mp34[0] ) + mp34[1] = slope1234 * ( x - mp23[0] ) + mp23[1]
+      //slope4123x + ( -1 * slope4123 * mp34[0] ) + mp34[1] = slope1234x + ( -1 * slope1234 * mp23[0] ) + mp23[1]         
+      newXNum = ( ( -1 * slope1234 * mp23[0] ) + mp23[1] ) - ( ( -1 * slope4123 * mp34[0] ) + mp34[1] ); // 2.25 - -1.75 = 4
+      newX = newXNum / (slope4123 - slope1234); // 1
+      newY = slope4123 * ( newX - mp34[0] ) + mp34[1]; // 2 * .25 + -.25 = 0.25
+      double[] pt2 = {newX, newY}; // 1, 0.25
+      
+      double T2temp = ( ( pt2[0] - pt1[0] ) * ( pt2[0] - pt1[0] ) ) + ( ( pt2[1] - pt1[1] ) * ( pt2[1] - pt1[1] ) ); // 0.00390625 + 0.015625 = 0.01953125
+      
+      assert (T2temp >= 0 );
+      
+      double T2 = Math.sqrt(T2temp); // 0.1397542486
+      
+      double[] tapers = {T1, T2};
+      
+      sptaperX.add(i, tapers[0]);
+      sptaperY.add(i, tapers[1]);
+      
+      return tapers;
+   
+   } //End calculateTapers   
 
    /**
     * outputARSP - a method to output the aspect ratio values for the Shape Parameters (MUST TYPE "-spaspectratio")
@@ -934,6 +1028,112 @@ public class RobinsonQuads {
          throw e;
      }   
    } //End outputSkewSP 
+   
+   /**
+    * outputTapersXYSP - a method to output the taper values for the Shape Parameters (MUST TYPE "-sptaper")
+    * @param fileNameSPT is the file name
+    * @param verbose determines the verbose level
+    */
+   public static void outputTapersXYSP(String fileNameSPT, int verbose) throws FileNotFoundException {
+	  String tapertext = "";
+	  BigDecimal minx = BigDecimal.valueOf(sptaperX.get(0));
+	  BigDecimal maxx = BigDecimal.valueOf(sptaperX.get(0));
+	  BigDecimal miny = BigDecimal.valueOf(sptaperY.get(0));
+	  BigDecimal maxy = BigDecimal.valueOf(sptaperY.get(0));
+	  int minposx = 1;
+	  int maxposx = 1;
+	  int minposy = 1;
+	  int maxposy = 1;
+	  if (verbose > 0){
+		  tapertext += "TAPERS FOR SHAPE PARAMETERS" + System.lineSeparator();
+	  }
+	  for ( int i = 0; i < sptaperX.size(); i++ ) {
+		  tapertext = tapertext + BigDecimal.valueOf(sptaperX.get(i)) + " " + BigDecimal.valueOf(sptaperY.get(i)) + " #" + (i + 1) + ", ";
+		  if ((i + 1) % 3 == 0){
+			  tapertext += "triangle " + ((i + 1) / 3) + System.lineSeparator();
+		  }
+		  else{
+			  tapertext += "triangle " + (((i + 1) / 3) + 1) + System.lineSeparator();
+		  }
+		  if (BigDecimal.valueOf(sptaperX.get(i)).compareTo(maxx) > 0){
+			  maxx = BigDecimal.valueOf(sptaperX.get(i));
+			  maxposx = i + 1;
+		  }
+		  if (BigDecimal.valueOf(sptaperX.get(i)).compareTo(minx) < 0){
+			  minx = BigDecimal.valueOf(sptaperX.get(i));
+			  minposx = i + 1;
+		  }
+		  if (BigDecimal.valueOf(sptaperY.get(i)).compareTo(maxy) > 0){
+			  maxy = BigDecimal.valueOf(sptaperY.get(i));
+			  maxposy = i + 1;
+		  }
+		  if (BigDecimal.valueOf(sptaperY.get(i)).compareTo(miny) < 0){
+			  miny = BigDecimal.valueOf(sptaperY.get(i));
+			  minposy = i + 1;
+		  }
+	  }
+	  
+	  if (verbose > 0) {
+		  tapertext += "#The minimum x value is " + minx + ", which is in quad " + minposx + " {" + findQuadsCoordinates(minposx - 1) + "}, which is in triangle ";
+		  if (minposx % 3 == 0){
+			  tapertext += (minposx / 3) + " {" + findTrianglesCoordinates(minposx / 3) + "}" + System.lineSeparator();
+		  }
+		  else{
+			  tapertext += ((minposx / 3) + 1) + " {" + findTrianglesCoordinates((minposx / 3) + 1) + "}" + System.lineSeparator();
+		  }
+		  tapertext += "#The maximum x value is " + maxx + ", which is in quad " + maxposx + " {" + findQuadsCoordinates(maxposx - 1) + "}, which is in triangle ";
+		  if (maxposx % 3 == 0){
+			  tapertext += (maxposx / 3) + " {" + findTrianglesCoordinates(maxposx / 3) + "}" + System.lineSeparator();
+		  }
+		  else{
+			  tapertext += ((maxposx / 3) + 1) + " {" + findTrianglesCoordinates((maxposx / 3) + 1) + "}" + System.lineSeparator();
+		  }
+		  tapertext += "#The minimum y value is " + miny + ", which is in quad " + minposy + " {" + findQuadsCoordinates(minposy - 1) + "}, which is in triangle ";
+		  if (minposy % 3 == 0){
+			  tapertext += (minposy / 3) + " {" + findTrianglesCoordinates(minposy / 3) + "}" + System.lineSeparator();
+		  }
+		  else{
+			  tapertext += ((minposy / 3) + 1) + " {" + findTrianglesCoordinates((minposy / 3) + 1) + "}" + System.lineSeparator();
+		  }
+		  tapertext += "#The maximum y value is " + maxy + ", which is in quad " + maxposy + " {" + findQuadsCoordinates(maxposy - 1) + "}, which is in triangle ";
+		  if (maxposy % 3 == 0){
+			  tapertext += (maxposy / 3) + " {" + findTrianglesCoordinates(maxposy / 3) + "}" + System.lineSeparator();
+		  }
+		  else{
+			  tapertext += ((maxposy / 3) + 1) + " {" + findTrianglesCoordinates((maxposy / 3) + 1) + "}" + System.lineSeparator();
+		  }
+		  tapertext += "#The mean average for x is " + findMean(sptaperX) + System.lineSeparator();
+		  tapertext += "#The mean average for y is " + findMean(sptaperY) + System.lineSeparator();
+		  
+	  }
+	  
+	  try (PrintWriter out = new PrintWriter(fileNameSPT + ".txt")){
+		  out.println(tapertext);
+	  }
+      catch (FileNotFoundException e) { //Checks for file not found exception
+          System.err.println("Problem creating files");
+          System.err.println(e.getMessage()); 
+          throw e;
+      }   
+   } //End outputTapersXYSP   
+   
+   /**
+    * printShapeParameters - a method to call other methods in order to print the AR, Skew Angle, and Tapers for the Shape Parameters
+    * @param i is the index of the quad
+    * @param p1 is the original coordinates of p1
+    * @param p2 is the original coordinates of p2
+    * @param p3 is the original coordinates of p3
+    * @param p4 is the original coordinates of p4
+    */   
+   public static void printShapeParameters( int i, double[] p1, double[] p2, double[] p3, double[] p4 ) {
+      
+      double AR = calculateAR( i, p1, p2, p3, p4 );
+      double skewAngle = calculateSkewAngle( i, p1, p2, p3, p4 );
+      double[] TapersXY = calculateTapers( i, p1, p2, p3, p4 );
+
+      System.out.println("Triangle " + ((i/3)+1) + ", Quad " + (i+1) + " || Aspect Ratio: " + AR + " /// Skew Angle: " + skewAngle + " /// X Taper : " + TapersXY[0] + " /// Y Taper : " + TapersXY[1]);
+      
+   } //End printShapeParameters   
 
    // ----------------------------------------------------------------------------------------------
    // BEGINNING OF SETTING ORDER
@@ -1868,6 +2068,7 @@ public class RobinsonQuads {
       
       calculateAR( i, p1, p2, p3, p4 );
 	   calculateSkewAngle( i, p1, p2, p3, p4 );
+      calculateTapers( i, p1, p2, p3, p4 );
 
    } //End of setCalculations
    
@@ -2070,8 +2271,10 @@ public class RobinsonQuads {
       System.out.println("-jtaper = outputs the taper values for the Jacobian into a .txt file");
       System.out.println("-spaspectratio = outputs the aspect ratio values for the Shape Parameters into a .txt file");      
       System.out.println("-spskew = outputs the skew values for the Shape Parameters into a .txt file");
+      System.out.println("-sptaper = outputs the taper values for the Shape Parameters into a .txt file");
       System.out.println("-r = outputs the R Code for displaying the quads and triangles into a .txt file");
       System.out.println("-j = displays the jacobian calculations for AR, Skew Angles, and Tapers in X and Y directions");
+      System.out.println("-sp = displays the shape parameters calculations for AR, Skew Angles, and Tapers in X and Y directions");
    } //End printUsage   
    
    // ----------------------------------------------------------------------------------------------
@@ -2086,8 +2289,6 @@ public class RobinsonQuads {
 
       //Command Methods
       
-      boolean printUsageNeeded = false;
-      
 	   boolean printTrianglesNeeded = false;
       boolean printQuadsNeeded = false;
       boolean outputRCodeNeeded = false;
@@ -2098,6 +2299,7 @@ public class RobinsonQuads {
       
       boolean outputARSPNeeded = false;      
       boolean outputSkewSPNeeded = false;
+      boolean outputTaperSPNeeded = false;
 
       String fileNameR = null;
       
@@ -2107,20 +2309,23 @@ public class RobinsonQuads {
       
       String fileNameSPAR = null;
       String fileNameSPS = null;
+      String fileNameSPT = null;
       
       boolean printJacobianNeeded = false;
+      boolean printShapeParametersNeeded = false; 
       
       int verbose = 0;
         
       for ( int i = 0; i < args.length; i++ ) {
       
+         if ( args[i].equals("-?") ) {
+             printUsage();
+             System.exit(0);
+         }         
+      
          if ( args[i].equals("-v") ) {
     		   verbose += 1;
-    	   }
-         
-         if ( args[i].equals("-?") ) {
-             printUsageNeeded = true;
-         }     
+    	   }  
          
 		   if ( args[i].equals("-printt") ) {
 		      printTrianglesNeeded = true; 
@@ -2179,7 +2384,18 @@ public class RobinsonQuads {
              if (i == args.length - 3 || fileNameSPS.substring(0,1).equals("-") || fileNameSPS.equals(null)){
              	fileNameSPS = "spskew";
              }	 
-         }             
+         }      
+         if ( args[i].equals("-sptaper") ) {
+        	 outputTaperSPNeeded = true;
+         
+             fileNameSPT = args[i + 1];
+             if (i == args.length - 3 || fileNameSPT.substring(0,1).equals("-") || fileNameSPT.equals(null)){
+             	fileNameSPT = "sptaper";
+             }        
+         }                
+         if ( args[i].equals("-sp") ) {
+            printShapeParametersNeeded = true;
+         }       
          
       }
 	  
@@ -2188,11 +2404,6 @@ public class RobinsonQuads {
       setQuads(); //Sets the values for the quads            
       for(int i = 0; i < QuadsX.size(); i++){
     	   setCalculations(i); //Sets the values for the calculations
-      }
-
-      if ( printUsageNeeded ) {
-          printUsage();
-          System.exit(0);
       }
 
       if ( printTrianglesNeeded ) {
@@ -2234,6 +2445,22 @@ public class RobinsonQuads {
       if ( outputSkewSPNeeded ) {
     	 outputSkewSP(fileNameSPS, verbose); 
       }         
+      if ( outputTaperSPNeeded ) {
+    	 outputTapersXYSP(fileNameSPT, verbose);
+      }      
+      
+      if ( printShapeParametersNeeded ) {      
+         System.out.println("----------------------------------------------------------------------------------------------");
+         System.out.println("SHAPE PARAMETERS METHODS");
+         System.out.println("----------------------------------------------------------------------------------------------");
+         for ( int j = 0; j < QuadsX.size(); j++ ) {
+       	  	double[] p1 = {QuadsX.get(j)[0], QuadsY.get(j)[0]};
+       	  	double[] p2 = {QuadsX.get(j)[1], QuadsY.get(j)[1]};
+       	  	double[] p3 = {QuadsX.get(j)[2], QuadsY.get(j)[2]};
+       	  	double[] p4 = {QuadsX.get(j)[3], QuadsY.get(j)[3]};
+            printShapeParameters(j, p1, p2, p3, p4);
+         }
+      }      
       
    }
 }
